@@ -1,0 +1,122 @@
+
+@node Introduction
+@chapter Introduction to password management
+
+This introductory chapter will superficially cover password management
+issues and describe how this program addresses them.
+
+@menu
+* Threats::                     How evil-doers access your accounts
+* Defenses::                    How to keep evil-doers at bay
+* how-it-works::                How gnu-pw-mgr helps
+@end menu
+
+@node Threats
+@section How evil-doers access your accounts
+
+First and foremost, because people give them their credentials (user name and
+password).  Not deliberately, of course.  They leave them around or reply to a
+phishing scam or whatever.  There's nothing providers of security assistance
+can do about it.  That's the user's responsibility.  Be careful out there.
+Keep your systems clean of spyware and watch for phishers.
+
+The next most common method is for a site to get ``hacked'' and the crooks
+make off with password files.  Hopefully, they've been hash encoded, but they
+are sometimes in the clear.  If they are hashed, then the crackers will try to
+reverse the hash and see how far and wide they can use your credentials.
+
+Other possibilities are telescopes, line taps, wireless sniffing and so on.
+Unless you are a secret agent working on national security matters, these
+possibilities are not terribly likely possibilities.
+
+The purpose of this software is to render useless, limit the potential damage,
+or, at least, make it difficult to gain much use out of any information
+captured.  And, also, make it convenient enough to use that it is actually
+used.  A very secure password scheme that is a nuisance to use, won't be used,
+and is therefore not very useful.
+
+@node Defenses
+@section How to keep evil-doers at bay
+
+First and foremost, make sure you know which web site you are interacting with
+when you supply credentials.  Do not blindly click an email that looks like
+one from Pay Pal or your bank.  Go to your financial institutions via a
+bookmark or a well-established link.
+
+Next, use different passwords at different web sites.  Unless you restrict
+yourself to very few web sites, this means you must manage them somehow.
+Pieces of paper get lost.  Password list files can wind up getting
+compromised.  If that happens, your entire online world is now open.
+Encrypted password list files can get decrypted, yielding the same
+possibility.
+
+Do not use either words or common transformations of words for passwords.
+Such techniques severly limit possibilities and constrained possibilities are
+searched more quickly.
+
+Use long passwords.  The longer they are, the more difficult (compute costly)
+they are to break.
+
+@node how-it-works
+@section How gnu-pw-mgr helps
+
+Passwords must be long, not based on dictionary words, never repeated,
+and not recorded where they can be gotten at.  You can't do it by memory.
+
+This program addresses the recording problem by not recording passwords.  They
+get re-computed every time, based on two separate factors each of which is
+unlikely to come into the hands of miscreants.  The first factor is a series
+of one or more password ``seeds'' or ``salts''.  You specify a tag for it and
+the seed itself is a block of text that contains at least 64 characters.  The
+second factor is a transformation of the web site address.  That
+transformation should be easy to remember, fairly easy to type, include odd
+capitalization, use multiple unusual punctuation characters, have a secret
+word or two and never, ever be written down.
+
+The text, the URL transform and the tag get hashed together to construct
+the password.  Since different web sites have different password
+requirements and allowances, the result is trimmed and tweaked until
+it meets the requirements.  It is always possible that new requirements
+might pop up, and the password polishing code has been written to be
+extensible.
+
+Using this program not only makes it simple to have different passwords
+for different web sites, it actually makes it inconvenient to use the
+same password.  It does not support the same password, so you would
+have to remember the jumble of letters and numbers for any alternate
+web site.  You won't do that.
+
+@command{gnu-pw-mgr} works by storing the seed in a private configuration file
+and obtaining the password identifier either from the command line or by
+reading it from standard input.  This configuration file must be secured from
+reading and writing by other users, but obtaining access will not reveal
+passwords.  The key to this is the @i{password identifier}.  It is the second
+factor in the authentication (password re-creation) that is never recorded.
+
+The configuration file does not need to be super secret.  What needs to be
+super secret is the transformation used for constructing password identifiers.
+That transform includes a prefix, a suffix, alternate capitalizations and a
+variety of word separators.  For example, you could prefix every domain name
+with ``access'' and suffix it with ``por-favor'', then use an unusual spelling
+of the domain, perhaps ``ExAmplE.moC''.  This yields a password id of
+``access/ExAmplE+moC=por-favor''.  You can remember that fairly easily.  If a
+bad actor gets your seed file, they won't work out the transform any time soon.
+
+On the other hand, if someone does happen to see you create the transform,
+it will still do no good, unless they also get the second factor: the
+seed file.  This is true even if they also get one password.  There is no
+way to derive the seed file from the password id and the resulting password.
+It is a one way hash function.  It is not an encryption.
+
+Finally, since every site has their own set of attributes that make for
+acceptable passwords, the hash of the inputs must be modified.  The hash of
+the password id by itself is used as a key to look up any previously
+established password constraints
+(@pxref{gnu-pw-mgr password-options,,password options}).
+These password attributes are lentgh, character types required and/or
+prohibited from being in the password and some hint about your login name or
+id.  That name need not be exactly your login name, just something that will
+remind you about which one you use for the site.  It may be omitted, if you
+are sure you can remember.
+
+These site specific options are then used to format the password display.

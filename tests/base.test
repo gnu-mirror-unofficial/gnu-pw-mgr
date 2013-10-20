@@ -1,0 +1,134 @@
+#! /bin/sh
+
+#  This file is part of gnu-pw-mgr.
+#
+#  Copyright (C) 2013 Bruce Korb - all rights reserved
+#
+#  gnu-pw-mgr is free software: you can redistribute it and/or modify it
+#  under the terms of the GNU General Public License as published by the
+#  Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  gnu-pw-mgr is distributed in the hope that it will be useful, but
+#  WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#  See the GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License along
+#  with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+readonly testname=`basename $0`
+set -x
+
+die() {
+    local last=$_
+    set +ex
+    test $# -gt 0 && last="$*"
+    echo "$testname failed:"$'\n'"$last"
+    ls -lRA ${TEST_HOME}
+    # cleanup
+    exit 1
+} 1>&2
+
+cleanup() {
+    rm -rf base.base base.res ${TEST_HOME}
+    $made_test && {
+        made_test=false
+        cd "$buildsrcdir"
+        mv -f SAVE-OBJS/* .
+        rmdir SAVE-OBJS || die "failed during cleanup"
+    } ||  :
+}
+
+init() {
+    PS4='>$FUNCNAME> '
+    PATH=`cd ../src && pwd`:${PATH}
+    TEST_HOME=`mktemp -d ${TMPDIR:-/tmp}/gpw-XXXXXX` || {
+        TEST_HOME=${TMPDIR:-/tmp}/gpw-$$
+        mkdir ${TEST_HOME} || die "cannot make $TEST_HOME directory"
+    }
+    chmod -R 700 ${TEST_HOME}
+    rm -rf ${TEST_HOME}/.[!.]* ${TEST_HOME}/* 2>/dev/null
+    mkdir "${TEST_HOME}/.local" || die "FAILED: mkdir ${TEST_HOME}/.local"
+    chmod 700 "${TEST_HOME}/.local"
+    export TEST_HOME
+
+    cd ../src
+    test -f gnu-pw-mgr && {
+        gpw=`pwd`/gnu-pw-mgr
+        made_test=`strings gnu-pw-mgr | fgrep TEST_HOME`
+        test "X$made_test" = X || {
+            made_test=false
+            export made_test gpw
+            cd - >/dev/null
+            return 0
+        }
+    }
+
+    made_test=true
+    mkdir SAVE-OBJS
+    buildsrcdir=`pwd`
+
+    for f in *.o gnu-pw-mgr
+    do test -f $f && mv $f SAVE-OBJS/.
+    done
+    ${MAKE:-make} gnu-pw-mgr CFLAGS='-g3 -O0 -DTEST_GPW=1' LDFLAGS=-static
+    gpw=`pwd`/gnu-pw-mgr
+    export made_test gpw
+}
+
+ck_test() {
+    for f
+    do
+        ct=`grep -F "$f" "${TEST_HOME}/.local/gnupwmgr.cfg" | wc -l` || \
+            die "'$f' not found in ${TEST_HOME}/.local/gnupwmgr.cfg"
+        test $ct -eq 1 || \
+            die "$ct '$f'-s in ${TEST_HOME}/.local/gnupwmgr.cfg"
+    done
+}
+
+run_test() {
+    set -e
+    $gpw -t 'TEST ONLY TAG' --text \
+        'This is only a test.  Were it real, you would likely know.  It is not.'
+    test -f "${TEST_HOME}/.local/gnupwmgr.cfg" || \
+        die "config file not created:  ${TEST_HOME}/.local/gnupwmgr.cfg"
+    ck_test 'TEST ONLY TAG'
+
+    samp='D/BvzGv2LcqJ35gk'
+    f=`$gpw --no-pbkdf2 -i 'test-tag' who | \
+        awk '/TEST ONLY TAG/{print $4}'`
+    test "X$f" = "X$samp" || \
+        die $'results differ\n'"$samp became $f"
+    ck_test 'TEST ONLY TAG' "login-id  = 'test-tag'"
+
+    trial='try 98'
+    samp='MYjChXuWGsJZ7n1PWbZmOC6KKK/fFCcGc29imK/o'
+    f=`$gpw --no-pbkdf2 -l40 $trial | awk '/KKK/{print $4}'`
+    test "X$f" = "X$samp" || \
+        die "wrong password found"
+
+    samp=`echo "$samp" | sed 's/KKK/KKL/'`
+    f=`$gpw --cclass no-trip $trial | awk '/KKL/{print $4}'`
+    test "X$f" = "X$samp" || \
+        die "wrong tweaked password found"
+
+    f=`$gpw --use-pbkdf2 31 $trial | awk '/TEST ONLY/{print $4}'`
+    test "X$f" = "Xdg/ztcP/3ioA5bOqYiv56/+e3G0eLnM72msZH+iC" || \
+        die "PBKDF2 inconsistency"
+
+    $gpw -t 'TEST ONLY TAG'
+    test -f "${TEST_HOME}/.local/gnupwmgr.cfg" || \
+        die "config file removed:  ${TEST_HOME}/.local/gnupwmgr.cfg"
+    grep -F 'TEST ONLY TAG'  "${TEST_HOME}/.local/gnupwmgr.cfg" && \
+        die "'TEST ONLY TAG' seed remains in config file"
+
+    set +e
+}
+
+init
+trap die 0
+run_test
+trap '' 0
+cleanup
+exit 0

@@ -1,0 +1,15 @@
+
+If you are building this from the source repository sources,
+you will need the following tools:
+
+* autotools (autoconf, automake and libtool)
+* autogen
+* gnulib
+* git
+
+You also need the autogen sources installed into ~/ag/git-ag.
+(A source module "scribble.[ch]" is pulled from there.)
+Then, finally, you must run the "bootstrap" script.
+
+If you are not certain what this all means, then please build
+from a source tarball.

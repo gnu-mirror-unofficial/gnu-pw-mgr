@@ -1,0 +1,8 @@
+Makefile
+Makefile.in
+dep-*
+gpw
+*.o
+opts.[ch]
+scribble.[ch]
+set-opt.[ch]

@@ -1,0 +1,550 @@
+/*  -*- Mode: conf -*-
+ */
+
+AutoGen Definitions options;
+
+prog-name       = gnu-pw-mgr;
+prog-title      = 'derive a password from an id';
+argument        = '[ <pw-id> ]';
+long-opts;
+version         = `tv=../.tarball-version
+	test -f $tv && cat $tv || echo 0.0`;
+
+/*
+ *  This file is part of gnu-pw-mgr.
+ *  Copyright (C) 2013 Bruce Korb, all rights reserved.
+ *  This is free software. It is licensed for use, modification and
+ *  redistribution under the terms of the GNU General Public License,
+ *  version 3 or later <http://gnu.org/licenses/gpl.html>
+ *
+ *  gnu-pw-mgr is free software: you can redistribute it and/or modify it
+ *  under the terms of the GNU General Public License as published by the
+ *  Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  gnu-pw-mgr is distributed in the hope that it will be useful, but
+ *  WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *  See the GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along
+ *  with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+copyright = {
+    date  = "2013";
+    owner = "Bruce Korb";
+    eaddr = 'bkorb@gnu.org';
+    type  = gpl;
+};
+
+// generated code attributes:
+die-code;             // emit "die()" and "fserr()" functions
+usage-message;        // emit "usage_message()" function
+no-xlate = anything;  // do not emit NLS stuff
+config-header         = config.h;
+
+// standard option tweaks:
+homerc;               // enable config files, but no file is specified
+help-value      = h;  // use '-h' not '-?'
+more-help-value = M;  // use '-M' not '-!'
+load-opts-value;      // no flag character for this option
+disable-save;         // disable option state saving
+
+export[2] =<<-_EOF_
+	#include "gpw-str.c"
+
+	#ifndef NBBY
+	#define NBBY 8 /* Number of Bits per BYte */
+	#endif
+
+	#define MIN_PW_LEN         8
+	#define MIN_SEED_TEXT_LEN 64
+	#define MARK_TEXT_LEN     24
+
+	static unsigned int const secure_mask   = S_IRWXG | S_IRWXO;
+	static char const * config_file_name    = NULL;
+	static size_t       config_file_size    = 0;
+	static uintptr_t    post_cfg_setting    = 0UL;
+
+	typedef struct str_list str_list_t;
+	struct str_list {
+	\    str_list_t *    next;
+	\    char            buf[0];
+	};
+	_EOF_;
+
+/*
+ # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+ #
+ #  O P T I O N   D E F I N I T I O N S
+ #
+ # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+ */
+flag = { name = seed-options;
+    descrip =
+	'Options for adding and removing seeds in the configuration file.';
+
+    documentation = <<- _EODoc_
+	The @code{--text} option or the @code{--tag} option (when by itself)
+	tell the program to manage password "seeds" in its database
+	(configuration file).  Both options together add a new seed, and
+	@code{--tag}, by itself on the command line, removes a seed.
+	_EODoc_;
+};
+
+flag            = {
+    name        = seed;
+    arg-type    = hierarchy;
+    arg-name    = SEED;
+    descrip     = 'define a seed for a series of passwords';
+    no-command;
+
+    doc = <<- _EOF_
+	This option is @strong{not} a command line option.
+	It is also the only option that is directly processed from
+	the config file.
+
+	The seed value consists of two named parts (sub-options):
+	@table @samp
+	@item tag
+	These are displayed next to each displayed password to help identify them.
+	@item text
+	This is not displayed, but is used for the SHA initial value.
+	This may be arbitrarily long.
+	@end table
+
+	It is expected that when you must create a new password for an
+	existing site, you will add a seed to your config file.  Specify only
+	the @code{--tag} and @code{--text} command line options and the
+	program will insert the new pair into the configuration file.  Specify
+	only the tag and no other command line arguments, and the associated
+	seed entry will be removed.  After that, every password id will have a
+	new "most recent" password associated with it.  You are expected to
+	gradually update all of your passwords and retire "seed" values no
+	longer in use.
+
+	New sites will not need a new seed.  Simply supplying the new
+	@code{<pw-id>} command argument will yield a new password.
+	_EOF_;
+};
+
+flag            = {
+    name        = tag;
+    value       = t;
+    arg-type    = string;
+    arg-name    = TAG;
+    descrip     = 'seed tag';
+    flags-cant  = login-id, cclass, length, specials, no-header, pbkdf2;
+    no-preset;
+    settable;
+
+    doc = <<- _EOF_
+	The tag for a seed to be added to or removed from the config file.
+	The use depends on whether or not there is a @code{--text} option.
+	_EOF_;
+};
+
+flag            = {
+    name        = text;
+    value       = s;
+    arg-type    = string;
+    arg-name    = TEXT;
+    descrip     = 'seed text';
+    flags-must  = tag;
+    no-preset;
+    flag-code   = <<- _EOCode_
+	\    char const * oops =
+	\        strstr(pOptDesc->optArg.argString, end_text_mark);
+	\    if (oops == NULL) return;
+	\    die(GNU_PW_MGR_EXIT_BAD_SEED, text_has_mark_fmt,
+	\        pOptDesc->optArg.argString);
+	_EOCode_;
+
+    doc = <<- _EOF_
+	The text for a password seed to be added to the config file.
+	This text cannot include the 7 character sequence "</text>".
+
+	This text must be at least 64 characters long.  The expectation
+	is you will write a sentence or two that you can easily remember,
+	including any capitalization, punctuation and spacing.  You should
+	include some non-alphabetic, non-digit characters here and there to
+	make a dictionary attack more difficult.  But if you need to
+	reconstruct this, you need to remember them.
+
+	If you provide an empty string, you will have a seed text of
+	64 random characters.  If your string gets padded, you will need
+	to save the configuration file some place secure or it will be
+	extremely difficult to reconstruct it.
+	_EOF_;
+};
+
+/*
+ # * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *
+ * New password option checklist:
+ *
+ * 1. fill in and document the option here
+ * 2. Add a new pwid_*_fmt string for adding it to the config file
+ * 3. deal with it in update_pwid_opts() and next_pwid_opt() in pw-opts.c
+ * 4. write the code to actually do something about this option.
+ */
+
+flag = { name = password-options;
+    descrip = 'Options for specifying password attributes.';
+
+    documentation = <<- _EODoc_
+	The @code{--cclass}, @code{--length}, @code{--tag} and
+	@code{--specials} options are stored in the configuration file.
+	They are associated with a password ID via the sha check sum
+	of the id.  They will be recalled the next time that id is used.
+	_EODoc_;
+};
+
+flag            = {
+    name        = login-id;
+    value       = i;
+    arg-type    = string;
+    descrip     = 'a reminder of your login id';
+    settable;
+    no-preset;
+
+    doc = <<- _EOF_
+	It is sometimes difficult to remember your login name for a
+	given site.  Or even, perhaps, if you have ever set up an account
+	on a particular site.  By specifying this option, you will know
+	both that you have set it up and you will have a reminder what
+	your login name is.  Avoid using your real login name.
+
+	The @code{login-id} has no effect on the final password, so it
+	may be specified or altered at any time.
+	_EOF_;
+};
+
+flag            = {
+    name        = length;
+    value       = l;
+    arg-type    = number;
+    arg-range   = '4->42';
+    arg-default = 16;
+    descrip     = 'sets password length';
+    settable;
+    no-preset;
+
+    doc = <<- _EOF_
+	Some web sites are more restrictive.  Some are more generous.  Set
+	this value in your home config file to change your default and specify
+	it on the command line for specific sites.  Use of this option requires
+	a @code{<pw-id>} operand.
+
+	Password lengths of 4 through 7 characters are limited to "pin" numbers.
+	"pin" numbers are 4 or more digits.  All other passwords must be at
+	least 8 characters long.
+	_EOF_;
+};
+
+flag = {
+    name        = cclass;
+    descrip     = 'password character class';
+    value       = c;
+    settable;
+    no-preset;
+
+    arg-type    = set-member;
+    keyword     = alpha, upper, lower, digit, special, // requirements
+                  no-special, no-alpha, no-triplets,   // prohibitions
+                  pin, alnum; // abbreviations
+    arg-default = alpha, digit;
+
+    doc = <<- _EOF_
+	This option augments or specifies which character classes either
+	must or must not appear in the final password.
+
+	Some sites disallow special characters, other sites require them, and
+	still others require them, but only certain ones.  If disallowed,
+	specify @code{no-special} and special characters will be replaced with
+	digits.  If @code{special} is specified specifically, then in the
+	absence of a '+' or '/' character, the second character will be
+	replaced with a hyphen.  Other characters may be substituted for these
+	three special characters with the @code{--specials} option.
+
+	@noindent
+	Explanations of the keywords:
+	@table @samp
+	@item upper
+	There must be at least one upper case letter.
+
+	@item lower
+	There must be at least one lower case letter.
+	Both this and @samp{upper} together require one of each.
+
+	@item alpha
+	There must be at least one alphabetic character, either upper or lower
+	If either @samp{upper} or @samp{lower} is specified, this attribute
+	is a no-op.
+
+	@item no-alpha
+	Alphabetic characters are prohibited.  This conflicts with
+	@samp{upper}, @samp{lower} and @samp{alpha}.
+
+	@item digit
+	There must be at least one decimal digit character.
+
+	@item no-triplets
+	When three characters in a row are the same, the third is fiddled.
+	Letters are changed to the next letter and @code{z} becomes @code{a}.
+	Digits are handled similarly.  Special characters are replaced with
+	the third possible special character (@code{-}, unless modified with
+	@code{--specials}).  (Yes, there are a few such sites.)
+
+	@item special
+	The password must contain at least one @samp{special character}
+	(a non-alphabetic, non-digit character).
+
+	@item no-special
+	The password must not contain any characters that are not alphabetic
+	or decimal digits.
+
+	@item pin
+	The password is all digits, a Personal Identification Number.
+	This is an abbreviation for @code{no-alpha + no-special + digit}.
+
+	@item alnum
+	This is an abbreviation for @code{alpha + digit}.
+	@end table
+	_EOF_;
+
+    flag-code[1] = "    fix_cclass_bits(pOptDesc);";
+};
+
+flag            = {
+    name        = pbkdf2;
+    disable     = no;
+    enable      = use;
+    enabled;
+    arg-type    = number;
+    arg-default = 10007;
+    descrip     = 'compute password with PKCS#5 PBKDF2';
+    settable;
+    no-preset;
+
+    doc = <<- _EOF_
+	By default, passwords are created by hashing together using the pbkdf2
+	funcion with SHA1 as the HMAC function.  The seed string is passed as
+	the salt data and the password id glued to the tag text for each seed
+	is passed as the password data.  The data are processed 10007 times.
+	This can be over-ridden by disabling pbkdf2 entirely or by specifying
+	a different count.
+
+	Please see RFC 2898 for a specification of the PBKDF2 (Password-Based
+	Key Derivation Function version 2) function.
+	_EOF_;
+};
+
+flag            = {
+    name        = specials;
+    arg-type    = string;
+    descrip     = 'set alternate special characters';
+    arg-default = '/+-';
+    settable;
+    no-preset;
+    flag-code   = <<- _EOCode_
+	\    unsigned int len = strlen(pOptDesc->optArg.argString);
+	\    if (len != 3)
+	\        usage_message("the --specials option must have exactly 3 "
+	\                      "characters, not %u.\n", len);
+	_EOCode_;
+
+    doc = <<- _EOF_
+	The password is a base64 encoding of a sha256 hash of various inputs.
+	Base64 encoding uses '+' and '/' characters and when this program is
+	required to have at least one special character in the result, it will
+	replace one character with a hyphen (@code{-}).
+
+	However, some web sites require special characters and constrain them
+	to be in a particular set that does not these three: @samp{/+-}.
+	Therefore, specify this option with exactly three characters in the
+	string argument.  They will be used to replace the three characters
+	above.  They may all be the same.  This option is accepted, but serves
+	no purpose if @code{no-special} has been specified in the
+	@code{--cclass} option.
+	_EOF_;
+};
+
+/*
+ # * * * * * * * * * * * * * * * * * * * *
+ */
+
+flag = { documentation; name = formatting-options;
+    descrip = 'Options for specifying output format.';
+};
+
+flag            = {
+    name        = no-header;
+    value       = H;
+    no-preset;
+    descrip     = 'omit printing the password headers';
+    doc = <<- _EOF_
+	By default, the output includes column headers.
+	Suppressing it is intended for automated logins.
+	_EOF_;
+};
+
+/*
+ # * * * * * * * * * * * * * * * * * * * *
+ */
+
+flag = { documentation; name = usage-options;
+    descrip = 'Options supported by the AutoOpts option library.';
+};
+
+/*
+ # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+ #
+ #  D O C U M E N T A T I O N   A T T R I B U T E S
+ #
+ # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+ */
+exit-name[1] = invalid;
+exit-desc[1] = 'the option/argument configuration is invalid';
+
+exit-name[2] = no-mem;
+exit-desc[2] = 'insufficient memory';
+
+exit-name[3] = bad-user;
+exit-desc[3] = 'no password entry for current user';
+
+exit-name[4] = homeless;
+exit-desc[4] = 'home directory could not be found';
+
+exit-name[5] = perm;
+exit-desc[5] = 'config file improperly protected';
+
+exit-name[6] = no-config;
+exit-desc[6] = 'config file missing';
+
+exit-name[7] = no-seed;
+exit-desc[7] = 'no seeds were specified in the config file';
+
+exit-name[8] = bad-seed;
+exit-desc[8] = 'The seed value was invalid';
+
+exit-name[9] = coding-error;
+exit-desc[9] = 'There is a coding error that should be reported';
+
+detail = <<-  _EOF_
+	The password id should contain a fairly consistent permutation of the
+	URL you are logging in to.  "Fairly" because you may wish to vary your
+	financial institutions differently than your newspaper.
+	e.g. "my/banK$moC" versus "bLog-oRg".  And then surround the id with
+	prefixes and suffixes.  Separate these with punctuation
+	characters to make dictionary attacks more difficult.
+
+	Only the passwords for one password id are ever printed.  If the
+	command line contains multiple operands (arguments after the options),
+	then they are assembled into one password id with space characters
+	separating the original operands.
+
+	One password is printed for every configured seed value.  Seed values
+	are added by specifying just the @code{--tag} and @code{--text}
+	options.  The tag is also printed with each password.  The
+	@code{--login-id}, @code{--length}, @code{--cclass} and
+	@code{--specials} options are associated with each password id.
+	Password ids are never stored anywhere.
+	_EOF_;
+
+detail = 'Example usage can be seen in the example section below.';
+
+doc-section = {
+    ds-format = texi;
+    ds-type   = examples;
+    ds-text   = <<- _EndOfText_
+	Before running the program to print a password, you must first
+	initialize its database with at least one seed.
+
+	@example
+	gnu-pw-mgr --tag "first-seed-tag" --text \
+	"This is only a 'test'.  Were it *real*,
+	you _would_ likely know?"
+	@end example
+
+	These two strings along with a password id are used to create a
+	@samp{sha256} hash code password.  So, now you are able to print a
+	password.
+
+	@example
+	gnu-pw-mgr --login-id "user-name" --length 32 \\
+	    --cclass=upper,lower,digit,special \\
+	    my example.com
+	@end example
+
+	In this example, the password id is the string "my example.com".
+	The space character is inserted between the command line operands.
+	The options are associated with this id via another @samp{sha256}
+	sum of just the id.  The "user-name" would typically be either your
+	actual user name for the site, or something that could readily
+	remind you of the login id.  If omitted, just do not forget it.
+	The length specifies the maximum length allowed for a password on the
+	site.  You will get a password of that length.  The @code{--cclass}
+	defines the allowed and/or required character class(es) for the
+	passwords for the site.
+
+	With the above seed and invocation, you will see printed out exactly
+	this:
+
+	@example
+	seed-tag     login id hint: user-name   pw:
+	first-seed-tag iQiF1g5aLQ0JqFIUbR/svpTS+F/PCeoy
+	@end example
+
+	Henceforth typing just @samp{gnu-pw-mgr my example.com} will always
+	yield this output.  The options above are now associated with the
+	password id via a hash code.  The @code{gnu-pw-mgr} database (either
+	@file{~/.local/gnupwmgr.cfg} or @file{~/.gnupwmgrrc}, but the former
+	preferred) will now be this (hash code abbreviated):
+
+	@example
+	<seed>
+	  <tag>first-seed-tag</tag>
+	  <text>This is only a 'test'.  Were it *real*,
+	you _would_ likely know?</text>
+	</seed>
+	<program per_pw_id>
+	<pwtag id="*HASH*">
+	  cclass = =alpha + upper + lower + digit + special
+	</pwtag>
+	<pwtag id="*HASH*">length = 32</pwtag>
+	<pwtag id="*HASH*">login-id = 'user-name'</pwtag>
+	@end example
+	_EndOfText_;
+};
+
+doc-section = {
+    ds-format = texi;
+    ds-type   = authors;
+    ds-text   = "Written by Bruce Korb.";
+};
+
+doc-section = {
+    ds-format = texi;
+    ds-type   = notes;
+    ds-text   = <<- _EndOfText_
+	This program specifies its own configuration file and disallows the
+	use of any other.  This file should be modified by running this
+	program and not by editing it.  The @code{--seed} and
+	@code{--load-opts} options cannot be specified on the command line and
+	the @code{--seed} option is only recognized in a configuration file.
+
+	Password ids should have some always-used prefix and/or suffix glued
+	onto a domain name or some trivial permutation of the domain name.
+	If you forget your password id, then the associated password is
+	irretrievably lost.  The prefix and suffix should be easily
+	remembered.  If you do not add a prefix or suffix and the
+	configuration file becomes compromised, then you have lost the keys to
+	all your passwords because it becomes trivial to guess password ids.
+
+	For example, always prepending @samp{_mine_} to a domain would yield
+	@samp{_mine_example.com} for your password id at @samp{example.com}.
+	Password ids are not stored anywhere.
+	_EndOfText_;
+};

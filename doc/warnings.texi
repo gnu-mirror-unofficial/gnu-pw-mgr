@@ -1,0 +1,118 @@
+
+@node warning warning
+@chapter Warnings
+
+Things to consider.
+
+@menu
+* deficiencies::        Cleanups that need doing
+* prying eyes::         Shell history
+* best pratcices::      Best gnu-pw-mgr practices
+* password resets::     Password reset arrangements
+@end menu
+
+@node deficiencies
+@section Cleanups that need doing
+
+It is entirely possible that there are some web sites out there with
+password requirements that this program cannot (at present) necessarily
+comply with.  There are some possible workarounds:
+
+@enumerate
+@item
+use an alternate purturbation on the web site name.  For the normal
+variation on the web site name, apply a ``--login-id'' value that
+tells you how to derive the alternate purturbation.
+
+This will always work.
+
+@item
+Request the addition of a new character classification flag.
+If the issue can be satisfied by polishing the emitted password
+a little bit, this is an easy way to fix it.
+
+@item
+File a bug report that encourages me to add a ``--purturb'' option.
+It would allow you to specify a purturbation specific for a certain
+password id for a specific seed tag.  For example:
+
+@example
+gnu-pw-mgr --tag one --text 'some text'
+gnu-pw-mgr --purturb one,xyz my example.com
+@end example
+
+For the seed tagged ``one'', the password id of ``my example.com''
+would have a purturbation string of ``xyz'' used for creating the
+hash password.  Hopefully, with one or two wiggles, you will wind
+up with an acceptable password.
+
+You'll need to explain why the first option, above, does not work.
+This would be some work.
+
+@item
+Something else, surely.  Please send a bug report (preferably a patch :)
+so the issue can be fixed.
+@end enumerate
+
+@node prying eyes
+@section Shell history
+
+It is imprudent to leave your invocations in your shell history.
+These are often stored away in your home directory, unless you do
+something to keep it out of your history.  It should not be the
+end of the world because it is troublesome to also obtain the
+configuration file.  Still, it is not wise to tempt fate.
+
+If you use BASH for your shell,
+@example
+HISTCONTROL=ignorespace
+HISTIGNORE=gnu-pw-mgr *:*/gnu-pw-mgr *
+unset HISTFILE
+@end example
+are your friends.  Press the space bar before the command name,
+or specify that anything that looks like a ``gnu-pw-mgr'' command should
+be ignored or eliminate history entirely.
+
+Also, if you put your password id's on the command line, they become part
+of the process history and can be found.  If that is a conceivable problem,
+then you may prefer to not put it on the command line and then type
+it in in response to a prompt.  Your password id will not be echoed
+back as you type it.
+
+@node best pratcices
+@section Best gnu-pw-mgr practices
+
+Try out several password id transforms before changing all your passwords
+on all your sites.  You may decide it is too hard or too easy and want
+to change it.  However, once you have gone to the trouble of changing the
+passwords on a lot of sites, you won't be especially eager to do it again.
+So, play with it on one site you use a lot, change the password a lot as
+you change the transform and then make a good decision.
+
+Once you need to or are required to change a password, add another seed
+to your configuration file.  Henceforth, you will be presented two
+passwords.  If you have updated your password, use the more recent
+one.  (That is what @xref{gnu-pw-mgr seed-options,the tags are for}.)
+Otherwise, login with the old password and update to the new one.
+Eventually, you should be able to retire the old seed.
+
+When choosing your password id transform, use things that you can easily
+remember.  Especially if some nonsense thing can be easily remembered.
+Separate the components with unusual things like multiple punctuation
+characters.  Do odd things with the top level domain.  cApitaliZe strangely.
+Use a slightly different transform for financial institutions.
+If someone gets ahold of your seed file, you want to hope that a
+dictionary attack will not be readily successful.
+
+But lastly and most important: be sure you can remember your transform(s).
+If you forget, your password is gone.  So choose what you can remember
+and be consistent.
+
+@node password resets
+@section Password reset arrangements
+
+Some sites will allow you to set up password resets using alternate channels
+(i.e. not your primary email address).  Take advantage of this whenever
+possible.  If someone gains access to your email, you don't want them to reset
+all your passwords, intercept the restore access emails and, thus, gain access
+to all your password protected accounts.

@@ -1,0 +1,12 @@
+Makefile
+Makefile.in
+dep-*
+fdl.texi
+gendocs_template
+invoke-*
+lgpl-2.1.texi
+gpw.1
+gpw.info
+gpw.texi
+stamp-vti
+version.texi
