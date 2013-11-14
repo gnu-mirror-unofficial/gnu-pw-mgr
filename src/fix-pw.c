@@ -31,7 +31,6 @@ fix_no_alpha_pw(char * pw)
 {
     bool force_spec = (OPT_VALUE_CCLASS & CCLASS_SPECIAL) != 0;
     bool no_spec    = true;
-    char * p = pw;
 
     for (;;) {
         unsigned char ch = *(pw++);
@@ -80,11 +79,12 @@ ck_pw_classes(char * pw, bool no_spec, char ** first_ch, char ** second_ch)
             res |= CCLASS_DIGIT;
 
         } else if (isalpha(ch)) {
-            if ((scan > pw + 3) && (*second_ch == NULL))
+            if ((scan > pw + 3) && (*second_ch == NULL)) {
                 if (*first_ch == NULL)
                     *first_ch = scan - 1;
                 else
                     *second_ch = scan - 1;
+            }
 
             res |= CCLASS_ALPHA |
                 (islower(ch) ? CCLASS_LOWER : CCLASS_UPPER);
@@ -107,11 +107,12 @@ ck_pw_classes(char * pw, bool no_spec, char ** first_ch, char ** second_ch)
             scan[-1] = (up ? 'A' : 'a') + (ch & 0x0F);
             res |= CCLASS_ALPHA | (up ? CCLASS_UPPER : CCLASS_LOWER);
 
-            if ((scan > pw + 3) && (*second_ch == NULL))
+            if ((scan > pw + 3) && (*second_ch == NULL)) {
                 if (*first_ch == NULL)
                     *first_ch = scan - 1;
                 else
                     *second_ch = scan - 1;
+            }
         }
     }
 }

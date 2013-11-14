@@ -336,6 +336,13 @@ flag            = {
 	This can be over-ridden by disabling pbkdf2 entirely or by specifying
 	a different count.
 
+	Normally, this option should not be used.  If, however, you are
+	getting invalid password complaints by your web site, this option
+	might be used to change the computed password.  Any value other than
+	@code{10007} will yield a completely different password.  For the
+	several users of a pre-release version of this program, specify
+	@code{no-pbkdf2} to yield the original password result.
+
 	Please see RFC 2898 for a specification of the PBKDF2 (Password-Based
 	Key Derivation Function version 2) function.
 	_EOF_;
@@ -362,10 +369,11 @@ flag            = {
 	replace one character with a hyphen (@code{-}).
 
 	However, some web sites require special characters and constrain them
-	to be in a particular set that does not these three: @samp{/+-}.
+	to be in a particular set that does not include these three: @samp{/+-}.
 	Therefore, specify this option with exactly three characters in the
 	string argument.  They will be used to replace the three characters
-	above.  They may all be the same.  This option is accepted, but serves
+	above.  The first two may be the same, but the third @i{must} be
+	different from the first two.  This option is accepted, but serves
 	no purpose if @code{no-special} has been specified in the
 	@code{--cclass} option.
 	_EOF_;
@@ -387,6 +395,8 @@ flag            = {
     doc = <<- _EOF_
 	By default, the output includes column headers.
 	Suppressing it is intended for automated logins.
+	The login name hint will not be provided, but the
+	@code{tag} is printed.
 	_EOF_;
 };
 

@@ -20,38 +20,14 @@ comply with.  There are some possible workarounds:
 
 @enumerate
 @item
-use an alternate purturbation on the web site name.  For the normal
-variation on the web site name, apply a ``--login-id'' value that
-tells you how to derive the alternate purturbation.
-
-This will always work.
-
-@item
-Request the addition of a new character classification flag.
-If the issue can be satisfied by polishing the emitted password
-a little bit, this is an easy way to fix it.
+Request the addition of a new character classification flag.  If the issue
+can be satisfied by fiddling the emitted password a little bit (with the
+@code{--pbkdf2} option), that would be faster and easier than implementing
+a new option.
 
 @item
-File a bug report that encourages me to add a ``--purturb'' option.
-It would allow you to specify a purturbation specific for a certain
-password id for a specific seed tag.  For example:
-
-@example
-gnu-pw-mgr --tag one --text 'some text'
-gnu-pw-mgr --purturb one,xyz my example.com
-@end example
-
-For the seed tagged ``one'', the password id of ``my example.com''
-would have a purturbation string of ``xyz'' used for creating the
-hash password.  Hopefully, with one or two wiggles, you will wind
-up with an acceptable password.
-
-You'll need to explain why the first option, above, does not work.
-This would be some work.
-
-@item
-Something else, surely.  Please send a bug report (preferably a patch :)
-so the issue can be fixed.
+Likely, something else, surely.
+Please send a bug report (preferably a patch :) so the issue can be fixed.
 @end enumerate
 
 @node prying eyes

@@ -32,7 +32,7 @@
 static char *
 make_pwid_mark(char const * name, size_t * len)
 {
-    unsigned char resbuf[256 / NBBY];
+    char resbuf[256 / NBBY];
     char txtbuf[sizeof(long) + (sizeof(resbuf) * 3) / 2];
     struct sha256_ctx ctx;
     sha256_init_ctx(&ctx);
@@ -209,14 +209,15 @@ update_pwid_opts(char const * name)
         }
 
         if (STATE_OPT(LENGTH) == OPTST_DEFINED)
-            fprintf(fp, pwid_length_fmt, mark, OPT_VALUE_LENGTH);
+            fprintf(fp, pwid_length_fmt, mark, (unsigned int)OPT_VALUE_LENGTH);
 
         if (STATE_OPT(SPECIALS) == OPTST_DEFINED)
             fprintf(fp, pwid_specials_fmt, mark, OPT_ARG(SPECIALS));
 
         if (STATE_OPT(PBKDF2) == OPTST_DEFINED) {
             char const * how = ENABLED_OPT(PBKDF2) ? "use" : "no";
-            fprintf(fp, pwid_pbkdf2_fmt, mark, how, OPT_VALUE_PBKDF2);
+            fprintf(fp, pwid_pbkdf2_fmt, mark, how,
+                    (unsigned int)OPT_VALUE_PBKDF2);
         }
 
         fclose(fp);
@@ -291,7 +292,9 @@ next_pwid_opt(char const * scan, char const * mark, size_t mark_len)
         }
         *end = NUL;
         die(GNU_PW_MGR_EXIT_NO_CONFIG, bad_cfg_ent, mark, name);
+        /* NOTREACHED */
     }
+    return NULL;
 }
 
 /**

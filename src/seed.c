@@ -74,7 +74,7 @@ get_seed_text(void)
             new_txt += text_len;
         }
         text_len = MIN_SEED_TEXT_LEN - text_len;
-        fprintf(stderr, adding_text, text_len);
+        fprintf(stderr, adding_text, (unsigned int)text_len);
         for (;;) {
             unsigned char ch = (rand() % 95) + ' ';
             *(new_txt++) = ch;
@@ -111,7 +111,6 @@ get_seed_text(void)
 static void
 add_seed(void)
 {
-    size_t dsz;
     char const * cfg_text = load_config_file();
 
     {
@@ -153,7 +152,6 @@ add_seed(void)
 static void
 rm_seed(void)
 {
-    size_t dsz;
     char const * cfg_data = load_config_file();
     char const * prune    = cfg_data;
 

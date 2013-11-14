@@ -34,16 +34,17 @@
 static void
 adjust_pw(char * buf, size_t bsz, unsigned char * data, size_t d_len)
 {
+    char * dta = (char *)data;
     switch (OPT_VALUE_CCLASS & (CCLASS_NO_ALPHA | CCLASS_NO_SPECIAL)) {
     case 0:
     case CCLASS_NO_SPECIAL:
-        base64_encode(data, d_len, buf, bsz);
+        base64_encode(dta, d_len, buf, bsz);
         buf[OPT_VALUE_LENGTH] = '\0';
         fix_std_pw(buf);
         break;
 
     case CCLASS_NO_ALPHA:
-        base64_encode(data, d_len, buf, bsz);
+        base64_encode(dta, d_len, buf, bsz);
         buf[OPT_VALUE_LENGTH] = '\0';
         fix_no_alpha_pw(buf);
         break;
@@ -127,7 +128,7 @@ get_pbkdf2_pw(char * buf, size_t bsz,
     if (rc != GC_OK)
         die(GNU_PW_MGR_EXIT_INVALID, pbkdf2_err_fmt, rc);
 
-    adjust_pw(buf, bsz, hash_bf, hash_ln);
+    adjust_pw(buf, bsz, (unsigned char *)hash_bf, hash_ln);
 }
 
 /**
@@ -138,11 +139,9 @@ static void
 print_pwid(char const * name)
 {
 #   define MIN_LEN ((256 / NBBY) + (256 / (NBBY * 2))) // 48
-    size_t buf_len = MIN_LEN;
+    size_t          buf_len = MIN_LEN;
     unsigned char * txtbuf;
-
-    int ix = 0;
-    char const * pfx = "";
+    char const *    pfx    = "";
     tOptionValue const * ov = optionFindValue(&DESC(SEED), NULL, NULL);
 
     set_pwid_opts(name);
@@ -194,9 +193,11 @@ print_pwid(char const * name)
          * (40 bytes).
          */
         if (ENABLED_OPT(PBKDF2) || (OPT_VALUE_LENGTH > (MIN_LEN - 8)))
-            get_pbkdf2_pw(txtbuf, buf_len, tag->v.strVal, txt->v.strVal, name);
+            get_pbkdf2_pw((char *)txtbuf, buf_len,
+                          tag->v.strVal, txt->v.strVal, name);
         else
-            get_dft_pw(txtbuf, buf_len, tag->v.strVal, txt->v.strVal, name);
+            get_dft_pw((char *)txtbuf, buf_len,
+                       tag->v.strVal, txt->v.strVal, name);
 
         printf(pw_fmt, tag->v.strVal, txtbuf);
 

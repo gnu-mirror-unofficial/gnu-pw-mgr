@@ -39,8 +39,11 @@ m4_pushdef([AO_Libopts_Dir],[libopts])dnl
 LIBOPTS_BUILD_BLOCKED=''
 LIBOPTS_CHECK_COMMON([libopts])
 INVOKE_LIBOPTS_MACROS
-m4_popdef([AO_Libopts_Dir])dnl
-
+m4_popdef([AO_Libopts_Dir])
+[test "X${GCC}" = Xyes && \
+    CFLAGS=`echo $CFLAGS -Wcast-align -Wmissing-prototypes \
+	-Wpointer-arith -Wshadow -Wstrict-prototypes -Wwrite-strings \
+	-Wno-format-contains-nul -fno-strict-aliasing -Wstrict-aliasing=2`]
 gl_GC_RANDOM
 AC_CHECK_FUNCS_ONCE([tcgetattr tcsetattr getpwuid])
 AC_CONFIG_FILES([Makefile doc/Makefile lib/Makefile src/Makefile tests/Makefile])
