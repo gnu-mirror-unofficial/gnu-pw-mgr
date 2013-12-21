@@ -65,6 +65,9 @@ reprocess_cclass(tOptDesc * od, str_list_t * str_list)
 
 /**
  * replace character classes "pin" and "alnum" with the correct bits.
+ * Also implicitly set digit/upper/lower when the @code{two-whatever}
+ * character class is specified.
+ *
  * @param[in,out] od  the option descriptor for @code{--cclass}.
  */
 static void
@@ -73,17 +76,25 @@ adjust_pin_n_alnum(tOptDesc * od)
     static uintptr_t const alias_mask = CCLASS_PIN | CCLASS_ALNUM;
     uintptr_t bits = OPT_VALUE_CCLASS;
 
+    if (bits & CCLASS_TWO_DIGIT)
+        bits |= CCLASS_DIGIT;
+
+    if (bits & CCLASS_TWO_UPPER)
+        bits |= CCLASS_UPPER;
+
+    if (bits & CCLASS_TWO_LOWER)
+        bits |= CCLASS_LOWER;
+
     /*
      * If alpha characters of either case are required, then plain "alpha"
      * is redundant.  Remove it.
      */
-    if ((bits & CCLASS_ALPHA) && (bits & (CCLASS_UPPER | CCLASS_LOWER))) {
+    if ((bits & CCLASS_ALPHA) && (bits & (CCLASS_UPPER | CCLASS_LOWER)))
         bits &= ~CCLASS_ALPHA;
-        od->optCookie = (void *)bits;
-    }
 
     switch (bits & alias_mask) {
     case 0:
+        od->optCookie = (void *)bits;
         return;
 
     case CCLASS_PIN:
@@ -111,6 +122,8 @@ adjust_pin_n_alnum(tOptDesc * od)
 
 /**
  * Fix up conflicting cclass bits.
+ * This is called directly from the  option handling code.
+ *
  * @param[in,out] od  the option descriptor for @code{--cclass}.
  */
 static void
@@ -183,12 +196,15 @@ sanity_check_cclass(void)
     } while (false);
 
     do {
+        /*
+         * The dual variants of these classes imply these class bits
+         */
         static uintptr_t const alpha_bits =
             CCLASS_ALPHA | CCLASS_UPPER | CCLASS_LOWER;
 
         uintptr_t bits = OPT_VALUE_CCLASS;
         if (((bits & CCLASS_NO_ALPHA) == 0) || ((bits & alpha_bits) == 0))
-            break;
+            break; /* neither prohibited nor required */
 
         /*
          * we started with alpha chars disabled and added some alpha

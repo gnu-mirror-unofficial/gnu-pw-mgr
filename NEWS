@@ -1,3 +1,14 @@
+New in 1.1 - December 2013
+
+* a --status option will display the status of a password id.
+  This will only tell you if there are special password attributes.
+
+* passwords can require two characters from one class.
+  This can now be specified for upper case letters, lower case
+  letters, digits and special characters (punctuation).
+  This is not supported for either "two of any alpha" or "two of
+  any alphanumeric".
+
 New in 1.0 - November 2013
 
 * This is a new project

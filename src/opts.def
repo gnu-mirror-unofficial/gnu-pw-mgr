@@ -258,7 +258,8 @@ flag = {
     arg-type    = set-member;
     keyword     = alpha, upper, lower, digit, special, // requirements
                   no-special, no-alpha, no-triplets,   // prohibitions
-                  pin, alnum; // abbreviations
+                  pin, alnum, // abbreviations
+                  two-upper, two-lower, two-digit, two-special;
     arg-default = alpha, digit;
 
     doc = <<- _EOF_
@@ -316,6 +317,10 @@ flag = {
 
 	@item alnum
 	This is an abbreviation for @code{alpha + digit}.
+
+	@item two-*
+	Two of a particular character class are required.
+	Specifying this implies "at least one of" the specified type.
 	@end table
 	_EOF_;
 

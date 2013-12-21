@@ -117,6 +117,11 @@ run_test() {
     test "X$f" = "Xdg/ztcP/3ioA5bOqYiv56/+e3G0eLnM72msZH+iC" || \
         die "PBKDF2 inconsistency"
 
+    samp=lMZ0FiVY
+    f=`$gpw --cc=two-digit $trial 2 | awk '/TEST ONLY/{print $4}'`
+    test "X$f" = "X$samp" && \
+        die "requiring two digits failed"
+
     $gpw -t 'TEST ONLY TAG'
     test -f "${TEST_HOME}/.local/gnupwmgr.cfg" || \
         die "config file removed:  ${TEST_HOME}/.local/gnupwmgr.cfg"
