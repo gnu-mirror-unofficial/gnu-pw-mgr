@@ -61,6 +61,7 @@ export[2] =<<-_EOF_
 	#define MIN_PW_LEN         8
 	#define MIN_SEED_TEXT_LEN 64
 	#define MARK_TEXT_LEN     24
+	#define MIN_BUF_LEN ((256 / NBBY) + (256 / (NBBY * 2))) // 48
 
 	static unsigned int const secure_mask   = S_IRWXG | S_IRWXO;
 	static char const * config_file_name    = NULL;
@@ -225,7 +226,7 @@ flag            = {
     name        = length;
     value       = l;
     arg-type    = number;
-    arg-range   = '4->42';
+    arg-range   = '4->128';
     arg-default = 16;
     descrip     = 'sets password length';
     settable;
@@ -239,7 +240,11 @@ flag            = {
 
 	Password lengths of 4 through 7 characters are limited to "pin" numbers.
 	"pin" numbers are 4 or more digits.  All other passwords must be at
-	least 8 characters long.
+	least 8 characters long.  The default length is 16.
+
+	Password lengths beyond 40 characters force the use of the pbkdf2
+	algorithm.  i.e.  @samp{--no-pbkdf2} is ignored.
+	This limit is derived from "MIN_BUF_LEN - 8".
 	_EOF_;
 };
 
@@ -314,7 +319,10 @@ flag = {
 	@end table
 	_EOF_;
 
-    flag-code[1] = "    fix_cclass_bits(pOptDesc);";
+    flag-code[1] = <<- _EOCode_
+	    if (pOptions == &gnu_pw_mgrOptions)
+	        fix_cclass_bits(pOptDesc);
+	_EOCode_;
 };
 
 flag            = {
@@ -397,6 +405,22 @@ flag            = {
 	Suppressing it is intended for automated logins.
 	The login name hint will not be provided, but the
 	@code{tag} is printed.
+	_EOF_;
+};
+
+flag            = {
+    name        = status;
+    value       = S;
+    no-preset;
+    descrip     = 'Show status of a password id';
+    doc = <<- _EOF_
+	Show all the modified password attributes for a password id.
+	If there are no special attributes, the word "default" is printed.
+	No password id is invalid, but some may have all default values,
+	consequently there is no special information kept about it.
+
+	Command line options will affect the output, but will not be
+	stored for future use.
 	_EOF_;
 };
 

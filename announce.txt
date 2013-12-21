@@ -1,0 +1,71 @@
+#!/bin/ksh
+# -*- Mode: shell-script -*-
+#
+# $Id: announce.txt,v 1.20 2011/04/26 19:36:37 bkorb Exp $
+
+test -z "${sender}" && sender=bkorb
+domain=gnu.org
+lname=${sender}@${domain}
+fullname='Bruce Korb'
+project=gnu-pw-mgr
+
+rm -f ${project}-*.txt
+tfile=$(mktemp ./${project}-XXXXXX) 2>/dev/null
+if test -z "${tfile}"
+then tfile=${project}-$$.txt
+else mv $tfile ${tfile}.txt
+     tfile=${tfile}.txt
+fi
+
+version=$(autoconf -t 'AC_INIT:$2')
+
+exec 3> ${tfile} 4< NEWS
+
+recip=$(echo \
+    ${lname} \
+    bug-gnu-utils@gnu.org)
+
+nl=$'\n'
+to_line='GNU Announcements <info-gnu@gnu.org>'
+recip=$(echo ${recip} info-gnu@gnu.org)
+ftpurl=ftp://ftp.gnu.org/gnu/${project}
+
+cat >&3 <<_EOF_
+From: ${fullname} <${sender}@${domain}>
+Sender: ${sender}@${domain}
+To: ${to_line}
+Subject: Release of version ${version} of ${project}
+Reply-To: bug-gnu-utils@gnu.org
+
+This program is designed to make it easy to reconstruct difficult
+passwords when they are needed while limiting the risk of attack.
+The user of this program inputs a self-defined transformation of a web site
+URL and obtains the password and user name hint for that web site.
+You must, however, be able to remember this password id, or the password
+is lost forever.
+
+_EOF_
+
+while read -u4 text
+do
+    : $text
+    case "${text}" in
+    'New in '* ) break ;; esac  
+done
+
+printf "${text}" >&3
+sed '/^New in /,$d;//d' >&3 <&4
+exec 4<&-
+
+cat >&3 <<_EOF_
+${project} home:  http://www.gnu.org/software/${project}/
+primary ftp:     ${ftpurl}/
+.tar.gz:         ${ftpurl}/${project}-${version}.tar.gz
+bug reports:     bkorb at the usual GNU domain
+bug archive:     http://lists.gnu.org/mailman/listinfo/bug-gnu-utils/
+maintainer:      ${fullname} - ${sender} at the usual GNU domain
+_EOF_
+
+exec 3>&-
+echo sendmail ${recip} bruce.korb@gmail.com \< ${tfile}
+## test $? -eq 0 && rm -f ${tfile}

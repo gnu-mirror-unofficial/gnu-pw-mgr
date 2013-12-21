@@ -136,18 +136,85 @@ get_pbkdf2_pw(char * buf, size_t bsz,
  * @param name  the name/id for which a password is needed
  */
 static void
+print_pwid_status(char const * name)
+{
+    static char const hdr_fmt[]  = "password id '%s':\n";
+    static char const lstr_fmt[] = "  %-10s %s\n";
+    static char const ldig_fmt[] = "  %-10s %u\n";
+
+    bool have_data = false;
+
+    if (HAVE_OPT(LOGIN_ID)) {
+        printf(hdr_fmt, name);
+        have_data = true;
+        printf(lstr_fmt, "login-id", OPT_ARG(LOGIN_ID));
+    }
+
+    if (HAVE_OPT(LENGTH)) {
+        if (! have_data) {
+            printf(hdr_fmt, name);
+            have_data = true;
+        }
+        printf(ldig_fmt, "length", (unsigned int)OPT_VALUE_LENGTH);
+    }
+
+    if (HAVE_OPT(PBKDF2) || (OPT_VALUE_LENGTH > (MIN_BUF_LEN - 8))) {
+        if (! have_data) {
+            printf(hdr_fmt, name);
+            have_data = true;
+        }
+        if (ENABLED_OPT(PBKDF2) || (OPT_VALUE_LENGTH > (MIN_BUF_LEN - 8)))
+            printf(ldig_fmt, "pbkdf2 ct", (unsigned int)OPT_VALUE_PBKDF2);
+        else
+            printf(lstr_fmt, "pbkdf2", "not used");
+    }
+
+    if (HAVE_OPT(SPECIALS)) {
+        if (! have_data) {
+            printf(hdr_fmt, name);
+            have_data = true;
+        }
+        printf(lstr_fmt, "spec chars", OPT_ARG(SPECIALS));
+    }
+
+    if (HAVE_OPT(CCLASS)) {
+        char * names;
+
+        if (! have_data) {
+            printf(hdr_fmt, name);
+            have_data = true;
+        }
+        doOptCclass(OPTPROC_RETURN_VALNAME, &DESC(CCLASS));
+        names = DESC(CCLASS).optArg.argString;
+        printf(lstr_fmt, "ch-class", names);
+        free(names);
+    }
+
+    if (! have_data)
+        printf("The %s password id has all default settings\n", name);
+}
+
+/**
+ * Print the passwords for \a name.
+ * @param name  the name/id for which a password is needed
+ */
+static void
 print_pwid(char const * name)
 {
-#   define MIN_LEN ((256 / NBBY) + (256 / (NBBY * 2))) // 48
-    size_t          buf_len = MIN_LEN;
+    size_t          buf_len = MIN_BUF_LEN;
     unsigned char * txtbuf;
     char const *    pfx    = "";
     tOptionValue const * ov = optionFindValue(&DESC(SEED), NULL, NULL);
 
     set_pwid_opts(name);
+    if (HAVE_OPT(STATUS)) {
+        print_pwid_status(name);
+        return;
+    }
+
     scribble_free();
 
-    if (OPT_VALUE_LENGTH > (MIN_LEN - 8)) // > 40
+    if (OPT_VALUE_LENGTH > (MIN_BUF_LEN - 8)) // > 40
         buf_len = OPT_VALUE_LENGTH + 16;
 
     /*
@@ -192,7 +259,7 @@ print_pwid(char const * name)
          * length exceeds what we can provide with 256 bits of hash
          * (40 bytes).
          */
-        if (ENABLED_OPT(PBKDF2) || (OPT_VALUE_LENGTH > (MIN_LEN - 8)))
+        if (ENABLED_OPT(PBKDF2) || (OPT_VALUE_LENGTH > (MIN_BUF_LEN - 8)))
             get_pbkdf2_pw((char *)txtbuf, buf_len,
                           tag->v.strVal, txt->v.strVal, name);
         else
