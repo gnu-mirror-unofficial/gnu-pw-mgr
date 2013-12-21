@@ -52,9 +52,9 @@ adjust_pw(char * buf, size_t bsz, unsigned char * data, size_t d_len)
     case CCLASS_NO_ALPHA | CCLASS_NO_SPECIAL:
     {
 #if SIZEOF_CHARP > 4
-        uint32_t const bytes_per_val = 17;
+        static uint32_t const bytes_per_val = 17;
 #else
-        uint32_t const bytes_per_val = 7;
+        static uint32_t const bytes_per_val = 7;
 #endif
         uint32_t mx = (sizeof(uintptr_t) / d_len) * bytes_per_val;
         if (OPT_VALUE_LENGTH > mx)
