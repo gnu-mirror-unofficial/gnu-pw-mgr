@@ -243,7 +243,15 @@ print_pwid(char const * name)
      * For each <seed> value in the config file, print a password.
      */
     do  {
-        tOptionValue const * tag, * txt;
+        tOptionValue const zero_ver = {
+            .valType = OPARG_TYPE_NUMERIC,
+            .pzName  = s_ver_z,
+            .v       = {
+                .longVal = 0
+            }
+        };
+
+        tOptionValue const * tag, * txt, * s_ver;
 
         if (ov->valType != OPARG_TYPE_HIERARCHY)
             die(GNU_PW_MGR_EXIT_BAD_SEED, bad_seed);
@@ -253,6 +261,11 @@ print_pwid(char const * name)
         if (  (tag->valType != OPARG_TYPE_STRING)
            || (tag->valType != OPARG_TYPE_STRING))
             die(GNU_PW_MGR_EXIT_BAD_SEED, bad_seed);
+
+        s_ver = optionGetValue(ov, s_ver_z);
+        if (s_ver == NULL)
+            s_ver = &zero_ver;
+        seed_version = s_ver->v.longVal;
 
         /*
          * Use the PBKDF function if it is requested or if the result

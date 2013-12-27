@@ -67,6 +67,7 @@ export[2] =<<-_EOF_
 	static char const * config_file_name    = NULL;
 	static size_t       config_file_size    = 0;
 	static uintptr_t    post_cfg_setting    = 0UL;
+	static uint32_t     seed_version        = 0;
 
 	typedef struct str_list str_list_t;
 	struct str_list {

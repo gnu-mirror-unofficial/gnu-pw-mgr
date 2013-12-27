@@ -105,6 +105,34 @@ get_seed_text(void)
 }
 
 /**
+ * convert version to a number.  Limits version numbers to 4095.4095.4095
+ * and ignores anything beyond the third component.
+ */
+static void
+ver_str_to_number(void)
+{
+    char const * pz = GNU_PW_MGR_VERSION;
+    int32_t     shift = 20;
+
+    errno = 0;
+    seed_version = 0;
+
+    for (;;) {
+        char const * pn;
+        uint32_t v = strtoul(pz, &pn, 10);
+        if ((v >= (1<<10)) || (errno != 0))
+            break;
+        seed_version += v << shift;
+        if (*pn != '.')
+            break;
+        pz = pn + 1;
+        shift -= 10;
+        if (shift < 0)
+            break;
+    }
+}
+
+/**
  * add a new seed to the config file.
  * Both the --tag and --text options were provided.
  */
@@ -112,6 +140,7 @@ static void
 add_seed(void)
 {
     char const * cfg_text = load_config_file();
+    ver_str_to_number();
 
     {
         char * tag = scribble_get(sizeof (tag_fmt) + strlen(OPT_ARG(TAG)));
@@ -139,7 +168,7 @@ add_seed(void)
 
         seed_txt = get_seed_text();
 
-        fprintf(fp, cfg_fmt, OPT_ARG(TAG), seed_txt);
+        fprintf(fp, cfg_fmt, OPT_ARG(TAG), seed_version, seed_txt);
         if (p != NULL)
             fputs(p, fp);
         fclose(fp);

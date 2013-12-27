@@ -9,8 +9,8 @@ string = { nm  = cclass_conflict;
            str = "'--cclass=no-alpha' conflicts with alpha, upper "
                  "and lower values\n"; };
 string = { nm  = cfg_fmt;
-           str = "\n<seed>\n  <tag>%s</tag>\n  <text>%s</text>\n"
-                "</seed>\n"; };
+           str = "\n<seed>\n  <tag>%s</tag><ver>%u</ver>\n"
+                "  <text>%s</text>\n</seed>\n"; };
 string = { nm  = text_has_mark_fmt;
            str = "The seed text cannot contain </text>:\n\t%s\n"; };
 string = { nm  = had_load_opts;
@@ -78,4 +78,5 @@ string = { nm = tag_fmt;         str = "<tag>%s</tag>"; };
 string = { nm = tag_gone_fmt;    str = "tag already removed: %s\n"; };
 string = { nm = tag_z;           str = "tag"; };
 string = { nm = text_z;          str = "text"; };
+string = { nm = s_ver_z;         str = "ver"; };
 string = { nm = end_text_mark;   str = "</text>"; };
