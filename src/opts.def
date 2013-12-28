@@ -62,6 +62,8 @@ export[2] =<<-_EOF_
 	#define MIN_SEED_TEXT_LEN 64
 	#define MARK_TEXT_LEN     24
 	#define MIN_BUF_LEN ((256 / NBBY) + (256 / (NBBY * 2))) // 48
+	#define VER_TO_INT(_maj, _min, _rev) \
+	\	(((_maj)<<20) + ((_min)<<10) + (_rev))
 
 	static unsigned int const secure_mask   = S_IRWXG | S_IRWXO;
 	static char const * config_file_name    = NULL;

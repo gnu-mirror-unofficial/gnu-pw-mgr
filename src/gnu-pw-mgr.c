@@ -243,14 +243,6 @@ print_pwid(char const * name)
      * For each <seed> value in the config file, print a password.
      */
     do  {
-        tOptionValue const zero_ver = {
-            .valType = OPARG_TYPE_NUMERIC,
-            .pzName  = s_ver_z,
-            .v       = {
-                .longVal = 0
-            }
-        };
-
         tOptionValue const * tag, * txt, * s_ver;
 
         if (ov->valType != OPARG_TYPE_HIERARCHY)
@@ -264,8 +256,9 @@ print_pwid(char const * name)
 
         s_ver = optionGetValue(ov, s_ver_z);
         if (s_ver == NULL)
-            s_ver = &zero_ver;
-        seed_version = s_ver->v.longVal;
+            seed_version = 0;
+        else
+            seed_version = s_ver->v.longVal;
 
         /*
          * Use the PBKDF function if it is requested or if the result

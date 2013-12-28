@@ -537,7 +537,7 @@ fix_std_pw(char * pw)
      * If we are using an old seed and we are not testing for two of a class,
      * use the old code.
      */
-    if (  (seed_version == 0)
+    if (  (seed_version < VER_TO_INT(1,1,0))
        && ((OPT_VALUE_CCLASS & two_of_a_class) == 0)) {
         fix_old_pw(pw);
         return;

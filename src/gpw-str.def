@@ -9,7 +9,7 @@ string = { nm  = cclass_conflict;
            str = "'--cclass=no-alpha' conflicts with alpha, upper "
                  "and lower values\n"; };
 string = { nm  = cfg_fmt;
-           str = "\n<seed>\n  <tag>%s</tag><ver>%u</ver>\n"
+           str = "\n<seed>\n  <tag>%s</tag><ver type=integer>%u</ver>\n"
                 "  <text>%s</text>\n</seed>\n"; };
 string = { nm  = text_has_mark_fmt;
            str = "The seed text cannot contain </text>:\n\t%s\n"; };
