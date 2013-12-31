@@ -109,24 +109,33 @@ flag            = {
 	It is also the only option that is directly processed from
 	the config file.
 
-	The seed value consists of two named parts (sub-options):
+	The seed value consists of three named parts (sub-options):
 	@table @samp
 	@item tag
 	These are displayed next to each displayed password to help identify them.
 	@item text
 	This is not displayed, but is used for the SHA initial value.
 	This may be arbitrarily long.
+	@item ver
+	The version of @code{gnu-pw-mgr} used to initially store the seed.
+	This is used to determine the password tweaking algorithm to use
+	when the generated password does not meet the site criteria
+	(@pxref{gnu-pw-mgr password-options,,
+	the password character class option}).  On rare occasions, new
+	character class restrictions may cause a change in the algorithm
+	used to tweak passwords.  When this is done, the old algorithm
+	is still used to tweak passwords from the older seeds.
 	@end table
 
 	It is expected that when you must create a new password for an
 	existing site, you will add a seed to your config file.  Specify only
 	the @code{--tag} and @code{--text} command line options and the
-	program will insert the new pair into the configuration file.  Specify
-	only the tag and no other command line arguments, and the associated
-	seed entry will be removed.  After that, every password id will have a
-	new "most recent" password associated with it.  You are expected to
-	gradually update all of your passwords and retire "seed" values no
-	longer in use.
+	program will insert the new triplet into the configuration file.
+	Specify only the tag and no other command line arguments, and the
+	associated seed entry will be removed.  After that, every password id
+	will have a new "most recent" password associated with it.  You are
+	expected to gradually update all of your passwords and retire seed
+	values no longer in use.
 
 	New sites will not need a new seed.  Simply supplying the new
 	@code{<pw-id>} command argument will yield a new password.
@@ -324,6 +333,8 @@ flag = {
 	@item two-*
 	Two of a particular character class are required.
 	Specifying this implies "at least one of" the specified type.
+	Two upper case, lower case, punctuation (special) and digit
+	characters may be specified this way.
 	@end table
 	_EOF_;
 

@@ -255,7 +255,7 @@ print_pwid(char const * name)
             die(GNU_PW_MGR_EXIT_BAD_SEED, bad_seed);
 
         s_ver = optionGetValue(ov, s_ver_z);
-        if (s_ver == NULL)
+        if ((s_ver == NULL) || (s_ver->valType != OPARG_TYPE_NUMERIC))
             seed_version = 0;
         else
             seed_version = s_ver->v.longVal;
