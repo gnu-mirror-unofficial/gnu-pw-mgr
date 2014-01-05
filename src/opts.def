@@ -185,10 +185,10 @@ flag            = {
 	make a dictionary attack more difficult.  But if you need to
 	reconstruct this, you need to remember them.
 
-	If you provide an empty string, you will have a seed text of
-	64 random characters.  If your string gets padded, you will need
-	to save the configuration file some place secure or it will be
-	extremely difficult to reconstruct it.
+	If the text is shorter than 64 characters, it will be padded out.  In
+	such a case, you will need to save the configuration file some place
+	secure or it will be extremely difficult to reconstruct it, should
+	that become necessary.
 	_EOF_;
 };
 
@@ -282,9 +282,9 @@ flag = {
 	still others require them, but only certain ones.  If disallowed,
 	specify @code{no-special} and special characters will be replaced with
 	digits.  If @code{special} is specified specifically, then in the
-	absence of a '+' or '/' character, the second character will be
-	replaced with a hyphen.  Other characters may be substituted for these
-	three special characters with the @code{--specials} option.
+	absence of a '+' or '/' character, one character will be replaced with
+	a hyphen.  Other characters may be substituted for these three special
+	characters with the @code{--specials} option.
 
 	@noindent
 	Explanations of the keywords:
