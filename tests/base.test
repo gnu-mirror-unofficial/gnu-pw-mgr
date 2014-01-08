@@ -117,6 +117,10 @@ run_test() {
     test "X$f" = "Xdg/ztcP/3ioA5bOqYiv56/+e3G0eLnM72msZH+iC" || \
         die "PBKDF2 inconsistency"
 
+    f=`$gpw --sel=24,16,8,3 $trial | awk '/TEST ONLY/{print $4}'`
+    test "X$f" = "Xeq//" || \
+        die "selection inconsistency"
+
     samp=lMZ0FiVY
     f=`$gpw --cc=two-digit $trial 2 | awk '/TEST ONLY/{print $4}'`
     test "X$f" = "X$samp" && \

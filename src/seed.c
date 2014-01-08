@@ -118,7 +118,7 @@ ver_str_to_number(void)
     seed_version = 0;
 
     for (;;) {
-        char const * pn;
+        char * pn;
         uint32_t v = strtoul(pz, &pn, 10);
         if ((v >= (1<<10)) || (errno != 0))
             break;

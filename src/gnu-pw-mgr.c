@@ -178,7 +178,7 @@ print_pwid_status(char const * name)
     }
 
     if (HAVE_OPT(CCLASS)) {
-        char * names;
+        char const * names;
 
         if (! have_data) {
             printf(hdr_fmt, name);
@@ -187,11 +187,47 @@ print_pwid_status(char const * name)
         doOptCclass(OPTPROC_RETURN_VALNAME, &DESC(CCLASS));
         names = DESC(CCLASS).optArg.argString;
         printf(lstr_fmt, "ch-class", names);
-        free(names);
+        free((void *)names);
     }
 
     if (! have_data)
         printf("The %s password id has all default settings\n", name);
+}
+
+/**
+ * select the characters for a selected character password.
+ * @param[in,out] txtbuf the full password overwritten by
+ *   the abbreviated password.
+ */
+static void
+select_chars(char * txtbuf)
+{
+    int const  len = strlen(txtbuf);
+    char *      pn = NULL;
+    char const * p = OPT_ARG(SELECT_CHARS);
+
+    char buf[64], *pd = buf;
+
+    /*
+     * the result length cannot be larger than the input length.
+     */
+    int const lim = (len > sizeof(buf)) ? sizeof(buf) : len;
+
+    errno = 0;
+    for (;;) {
+        long v = strtol(p, &pn, 0);
+        if ((errno != 0) || (v < 1) || (v > len))
+            die(GNU_PW_MGR_EXIT_BAD_SELECT_CHARS, OPT_ARG(SELECT_CHARS));
+        *(pd++) = txtbuf[v-1];
+        if (pd >= buf + lim)
+            die(GNU_PW_MGR_EXIT_BAD_SELECT_CHARS, OPT_ARG(SELECT_CHARS));
+        p = pn + strspn(pn, " ,");
+        if (*p == NUL)
+            break;
+    }
+
+    *pd = NUL;
+    strcpy(txtbuf, buf);
 }
 
 /**
@@ -271,6 +307,9 @@ print_pwid(char const * name)
         else
             get_dft_pw((char *)txtbuf, buf_len,
                        tag->v.strVal, txt->v.strVal, name);
+
+        if (HAVE_OPT(SELECT_CHARS))
+            select_chars(txtbuf);
 
         printf(pw_fmt, tag->v.strVal, txtbuf);
 
@@ -353,9 +392,6 @@ stdin_pwid(void)
         "fputs/fflush/fread";
 # endif
     char pwid[4096];
-
-    if (! isatty(STDIN_FILENO) || ! isatty(STDOUT_FILENO))
-        usage_message( no_pwid_fmt);
 
     do  {
         if (isatty(STDIN_FILENO) && isatty(STDOUT_FILENO)) {

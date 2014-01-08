@@ -406,6 +406,22 @@ flag            = {
 	_EOF_;
 };
 
+flag            = {
+    name        = select-chars;
+    arg-type    = string;
+    descrip     = 'select only certain bytes of a password';
+
+    doc = <<- _EOF_
+	There exists at least one web site that asks you to enter just some
+	of the password characters, like the second, tenth and sixteenth.
+	With long, memorable resistant passwords, this can be difficult to
+	do.  For such web sites, provide this option with the string
+	"2,10,16" as the option argument.  The characters to select are
+	space or comma separated values.  The result cannot be longer than
+	the original password.
+	_EOF_;
+};
+
 /*
  # * * * * * * * * * * * * * * * * * * * *
  */
@@ -482,8 +498,11 @@ exit-desc[7] = 'no seeds were specified in the config file';
 exit-name[8] = bad-seed;
 exit-desc[8] = 'The seed value was invalid';
 
-exit-name[9] = coding-error;
-exit-desc[9] = 'There is a coding error that should be reported';
+exit-name[9] = bad-select-chars;
+exit-desc[9] = 'the list of characters for the --select-chars option is bad';
+
+exit-name[10] = coding-error;
+exit-desc[10] = 'There is a coding error that should be reported';
 
 detail = <<-  _EOF_
 	The password id should contain a fairly consistent permutation of the
