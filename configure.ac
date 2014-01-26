@@ -1,7 +1,7 @@
 dnl
 dnl  This file is part of gnu-pw-mgr.
 dnl
-dnl  Copyright (C) 2013 Bruce Korb - all rights reserved
+dnl  Copyright (C) 2013-2014 Bruce Korb - all rights reserved
 dnl
 dnl  gnu-pw-mgr is free software: you can redistribute it and/or modify it
 dnl  under the terms of the GNU General Public License as published by the

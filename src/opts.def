@@ -12,7 +12,7 @@ version         = `tv=../.tarball-version
 
 /*
  *  This file is part of gnu-pw-mgr.
- *  Copyright (C) 2013 Bruce Korb, all rights reserved.
+ *  Copyright (C) 2013-2014 Bruce Korb, all rights reserved.
  *  This is free software. It is licensed for use, modification and
  *  redistribution under the terms of the GNU General Public License,
  *  version 3 or later <http://gnu.org/licenses/gpl.html>
@@ -32,7 +32,7 @@ version         = `tv=../.tarball-version
  */
 
 copyright = {
-    date  = "2013";
+    date  = "2013-2014";
     owner = "Bruce Korb";
     eaddr = 'bkorb@gnu.org';
     type  = gpl;
