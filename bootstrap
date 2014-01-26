@@ -230,7 +230,7 @@ vc_ignore=
 
 # Source required external libraries:
 # Set a version string for this script.
-scriptversion=2014-01-03.01; # UTC
+scriptversion=2014-01-26.18; # UTC
 
 # General shell script boiler plate, and helper functions.
 # Written by Gary V. Vaughan, 2004
@@ -3698,9 +3698,9 @@ func_require_git ()
     $opt_skip_git && GIT=true
 
     test true = "$GIT" || {
-      if test -f .git; then
-        ($GIT --version) >/dev/null 2>&1 || GIT=true
-      fi
+      git_root_dir=`exec 2>/dev/null
+        $GIT rev-parse --git-dir`
+      test -z "$git_root_dir" && GIT=true
     }
 
     func_verbose "GIT='$GIT'"
