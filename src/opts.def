@@ -29,6 +29,9 @@ version         = `tv=../.tarball-version
  *
  *  You should have received a copy of the GNU General Public License along
  *  with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * --copyright-mark "(copyright \\(c\\)[ \t]+|" \
+ *   "date[ \t]*=[ \t]*\")([12][90][0-9][0-9])"
  */
 
 copyright = {
