@@ -1,3 +1,13 @@
+New in 1.2 - March 2014
+
+* New option:  selection of password characters (--select-chars)
+  There is a bank on this planet that requires you to enter
+  specific characters from your password -- not the entire thing.
+
+* When reading in password id's from stdin, allow the stdin/out
+  to be non-terminals so this program can be used as a web page
+  service.
+
 New in 1.1 - January 2014
 
 * a --status option will display the status of a password id.
