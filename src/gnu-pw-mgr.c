@@ -200,9 +200,9 @@ print_pwid_status(char const * name)
  *   the abbreviated password.
  */
 static void
-select_chars(char * txtbuf)
+select_chars(unsigned char * txtbuf)
 {
-    int const  len = strlen(txtbuf);
+    int const  len = strlen((char *)txtbuf);
     char *      pn = NULL;
     char const * p = OPT_ARG(SELECT_CHARS);
 
@@ -227,7 +227,7 @@ select_chars(char * txtbuf)
     }
 
     *pd = NUL;
-    strcpy(txtbuf, buf);
+    strcpy((char *)txtbuf, buf);
 }
 
 /**
