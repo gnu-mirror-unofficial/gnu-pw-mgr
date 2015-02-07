@@ -134,7 +134,7 @@ acceptable passwords, the hash of the inputs must be modified.  The hash of
 the password id by itself is used as a key to look up any previously
 established password constraints
 (@pxref{gnu-pw-mgr password-options,,password options}).
-These password attributes are lentgh, character types required and/or
+These password attributes are length, character types required and/or
 prohibited from being in the password and some hint about your login name or
 id.  That name need not be exactly your login name, just something that will
 remind you about which one you use for the site.  It may be omitted, if you
