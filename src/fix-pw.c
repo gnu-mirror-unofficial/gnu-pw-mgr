@@ -33,7 +33,7 @@ clean_triplets(char * pw)
 {
     unsigned char last = *(pw++);
     if (last == NUL)
-        die(GNU_PW_MGR_EXIT_CODING_ERROR,  inv_pwd);
+        die(GNU_PW_MGR_EXIT_CODING_ERROR, inv_pwd);
 
     for (;; pw++) {
         if (*pw == NUL)
@@ -139,107 +139,6 @@ ck_pw_classes(char * pw, bool no_spec, char ** first_ch, char ** second_ch)
                 else
                     *second_ch = scan - 1;
             }
-        }
-    }
-}
-
-/**
- * fiddle the password to comply with requirements.  Special characters may be
- * required or prohibited.  Both upper and lower case letters may be required.
- * The password may be forced to be all digits.  The @code{--class} option
- * should be specific to each password id.
- *
- * @param[in,out] pw  the password buffer
- */
-static void
-fix_old_pw(char * pw)
-{
-    bool no_spec = (OPT_VALUE_CCLASS & CCLASS_NO_SPECIAL)  ? true : false;
-    bool no_trip = (OPT_VALUE_CCLASS & CCLASS_NO_TRIPLETS) ? true : false;
-
-    for (;;) {
-        char *    first_ch, * second_ch;
-        uintptr_t have = ck_pw_classes(pw, no_spec, &first_ch, &second_ch);
-        uintptr_t need;
-
-        /*
-         * what we still need are the bits set in OPT_VALUE_CCLASS but
-         * not set in "have".
-         */
-        need = (have & OPT_VALUE_CCLASS) ^ OPT_VALUE_CCLASS;
-
-        if (need == 0) {
-            /* Everything in OPT_VALUE_CLASS is set in "have" */
-            if (no_trip)
-                clean_triplets(pw);
-            return;
-        }
-
-        if ((need & CCLASS_SPECIAL) != 0)
-            pw[1] = OPT_ARG(SPECIALS)[2];
-
-        if ((need & CCLASS_DIGIT) != 0)
-            pw[2] = (pw[2] & 0x07) | '0';
-
-        /*
-         * Strip out cclass-es we cannot need any more.
-         * We may have clobbered a needed alpha or a needed digit,
-         * but we're going to loop back at this point and detect that.
-         * However, if we already do not have an alpha or a digit,
-         * then we still won't, so try to fix it up anyway.
-         * The "first_ch" and "second_ch" pointers will never point to
-         * the first three characters of "pw".
-         */
-        need &= ~(CCLASS_SPECIAL | CCLASS_DIGIT);
-
-        switch (need) {
-        case 0: break;
-
-        /*
-         * ONE LOWER CASE LETTER FIXUP
-         */
-        case CCLASS_LOWER:
-            if (second_ch != NULL) {
-                *second_ch += 'a' - 'A';
-                break;
-            }
-            goto force_one_letter;
-
-        /*
-         * ONE UPPER CASE LETTER FIXUP
-         */
-        case CCLASS_UPPER :
-            if (second_ch != NULL) {
-                *second_ch -= 'a' - 'A';
-                break;
-            }
-            /* FALLTHROUGH */
-
-        case CCLASS_ALPHA: // CCLASS_ALPHA --> no letter was found
-        case CCLASS_ALPHA | CCLASS_LOWER:
-        case CCLASS_UPPER | CCLASS_ALPHA:
-        force_one_letter:
-
-            if (first_ch == NULL) {
-                second_ch = pw + 3;
-            } else {
-                second_ch = first_ch + 1;
-                if (*second_ch == NUL)
-                    second_ch = first_ch - 1;
-            }
-            *second_ch = ((need & CCLASS_UPPER) ? 'A' : 'a')
-                + (*second_ch & 0x0F);
-            break;
-
-        /*
-         * ONE UPPER AND ONE LOWER CASE LETTER FIXUP
-         * No letters were found if we need both.
-         */
-        case CCLASS_UPPER | CCLASS_LOWER:
-        case CCLASS_UPPER | CCLASS_LOWER | CCLASS_ALPHA:
-            pw[3] = 'a' + (pw[3] & 0x0F);
-            pw[4] = 'A' + (pw[4] & 0x0F);
-            break;
         }
     }
 }
@@ -530,20 +429,8 @@ add_special(char * pw, int * cta)
 static void
 fix_std_pw(char * pw)
 {
-    static uintptr_t const two_of_a_class = CCLASS_TWO_UPPER
-        | CCLASS_TWO_LOWER | CCLASS_TWO_DIGIT | CCLASS_TWO_SPECIAL;
     int cta[4];
     uintptr_t need;
-
-    /*
-     * If we are using an old seed and we are not testing for two of a class,
-     * use the old code.
-     */
-    if (  (seed_version < VER_TO_INT(1,1,0))
-       && ((OPT_VALUE_CCLASS & two_of_a_class) == 0)) {
-        fix_old_pw(pw);
-        return;
-    }
 
     {
         bool no_spec = (OPT_VALUE_CCLASS & CCLASS_NO_SPECIAL)  ? true : false;

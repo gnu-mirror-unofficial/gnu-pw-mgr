@@ -51,11 +51,11 @@ adjust_pw(char * buf, size_t bsz, unsigned char * data, size_t d_len)
 
     case CCLASS_NO_ALPHA | CCLASS_NO_SPECIAL:
     {
+        static uint32_t const bytes_per_val = 7
 #if SIZEOF_CHARP > 4
-        static uint32_t const bytes_per_val = 17;
-#else
-        static uint32_t const bytes_per_val = 7;
+            + 10
 #endif
+            ;
         uint32_t mx = (sizeof(uintptr_t) / d_len) * bytes_per_val;
         if (OPT_VALUE_LENGTH > mx)
             die(GNU_PW_MGR_EXIT_INVALID, pin_too_big,
@@ -265,8 +265,7 @@ print_pwid(char const * name)
 
     } else {
         size_t l = strlen(OPT_ARG(LOGIN_ID));
-        char * t;
-        t = scribble_get(l + 2);
+        char * t = scribble_get(l + 2);
         memcpy(t, OPT_ARG(LOGIN_ID), l);
         t[l++] = ' ';
         t[l]   = NUL;
@@ -284,17 +283,18 @@ print_pwid(char const * name)
         if (ov->valType != OPARG_TYPE_HIERARCHY)
             die(GNU_PW_MGR_EXIT_BAD_SEED, bad_seed);
 
-        tag = optionGetValue(ov, tag_z);
-        txt = optionGetValue(ov, text_z);
+        tag   = optionGetValue(ov, tag_z);
+        txt   = optionGetValue(ov, text_z);
+        s_ver = optionGetValue(ov, s_ver_z);
+
         if (  (tag->valType != OPARG_TYPE_STRING)
            || (tag->valType != OPARG_TYPE_STRING))
             die(GNU_PW_MGR_EXIT_BAD_SEED, bad_seed);
 
-        s_ver = optionGetValue(ov, s_ver_z);
-        if ((s_ver == NULL) || (s_ver->valType != OPARG_TYPE_NUMERIC))
-            seed_version = 0;
-        else
-            seed_version = s_ver->v.longVal;
+        if ((s_ver == NULL) || (s_ver->valType != OPARG_TYPE_NUMERIC)) {
+            warning_msg(too_old_z, tag);
+            continue;
+        }
 
         /*
          * Use the PBKDF function if it is requested or if the result
