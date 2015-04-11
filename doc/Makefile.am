@@ -19,6 +19,7 @@
 DEP_FILES       =
 MAN_PAGES       =
 TEXI_DOC        =
+MENU_FILES      =
 GEN_SOURCES     = $(MAN_PAGES) $(TEXI_DOC)
 texi_sources    = fdl.texi intro.texi warnings.texi
 dist_man1_MANS  = $(MAN_PAGES)
@@ -39,12 +40,20 @@ gen_invoke  = PATH="$(top_builddir)/src:$${PATH}" \
 	$(top_srcdir)/src/$(2) ; \
     test -f $@
 
-gen_man     = autogen -MFdep-$@ -b $(1) -T agman-cmd.tpl \
+gen_man     = autogen -MF$@ -b $(1) -T agman-cmd.tpl \
 	$(top_srcdir)/src/$(2) ; \
     test -f $@
 
 all : $(DEP_FILES)
 
+clean-local :
+	rm -f $(DEP_FILES) $(GEN_SOURCES) $(MENU_FILES)
+
+gnudocs : $(TEXI_DOC) $(srcdir)/gendocs_template
+	$(run_mkman) $@
+
+# # # # #  gnu-pw-mgr.1   # # # # #
+#
 DEP_FILES += dep-gnu-pw-mgr.1
 MAN_PAGES += gnu-pw-mgr.1
 -include dep-gnu-pw-mgr.1
@@ -52,6 +61,8 @@ dep-gnu-pw-mgr.1 :
 	$(call gen_man,gnu-pw-mgr,opts.def)
 gnu-pw-mgr.1 : dep-gnu-pw-mgr.1
 
+# # # # #  sort-pw-cfg.1   # # # # #
+#
 MAN_PAGES += sort-pw-cfg.1
 DEP_FILES += dep-sort-pw-cfg.1
 -include dep-sort-pw-cfg.1
@@ -59,28 +70,30 @@ dep-sort-pw-cfg.1 :
 	$(call gen_man,sort-pw-cfg,sort-opts.def)
 sort-pw-cfg.1 : dep-sort-pw-cfg.1
 
+# # # # #  invoke-gnu-pw-mgr.texi   # # # # #
+#
 DEP_FILES += dep-invoke-gnu-pw-mgr.texi
 TEXI_DOC  += invoke-gnu-pw-mgr.texi
+MENU_FILES+= invoke-gnu-pw-mgr.menu
 -include dep-invoke-gnu-pw-mgr.texi
 dep-invoke-gnu-pw-mgr.texi :
 	$(call check_exe,gnu-pw-mgr )
 	$(call gen_invoke,gnu-pw-mgr,opts.def )
 invoke-gnu-pw-mgr.texi : dep-invoke-gnu-pw-mgr.texi
 
+# # # # #  invoke-sort-pw-cfg.texi   # # # # #
+#
 DEP_FILES += dep-invoke-sort-pw-cfg.texi
 TEXI_DOC  += invoke-sort-pw-cfg.texi
+MENU_FILES+= invoke-sort-pw-cfg.menu
 -include dep-invoke-sort-pw-cfg.texi
 dep-invoke-sort-pw-cfg.texi :
 	$(call check_exe,sort-pw-cfg )
 	$(call gen_invoke,sort-pw-cfg,sort-opts.def )
 invoke-sort-pw-cfg.texi : dep-invoke-sort-pw-cfg.texi
 
-clean-local :
-	rm -f dep-* invoke-*.texi invoke-*.menu *.1
-
-gnudocs : $(TEXI_DOC) $(srcdir)/gendocs_template
-	$(run_mkman) $@
-
+# # # # #
+#
 .NOTPARALLEL:
-
+#
 # doc/Makefile.am ends here
