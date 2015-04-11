@@ -43,8 +43,9 @@ access_config_file(void)
             (unsigned int)(sbf.st_mode & secure_mask));
 
     config_file_size = sbf.st_size;
-            
-    chmod(config_file_name, S_IWUSR | S_IRUSR);
+
+    if (chmod(config_file_name, S_IWUSR | S_IRUSR) != 0)
+        fserr(GNU_PW_MGR_EXIT_BAD_CONFIG, cfg_immutable, config_file_name);
 
     return config_file_name;
 }
@@ -87,7 +88,7 @@ load_config_file(void)
     char * dta;
     if (config_file_data != empty)
         free((void *)config_file_data);
-    
+
     (void) access_config_file();
     if (config_file_size == 0) {
         config_file_data = empty;

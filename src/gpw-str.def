@@ -64,6 +64,7 @@ string = { nm = cclass_str;      str = "cclass string"; };
 strint = { nm = cclass_conflict; str = "cclass 'pin' and 'alnum' conflict\n"; };
 string = { nm = cfg_insecure;    str = "config dir '%s' is insecure\n"; };
 string = { nm = cfg_missing_fmt; str = "config file '%s' is missing\n"; };
+string = { nm = cfg_immutable;   str = "cannot update config file"; };
 string = { nm = digits_z;        str = "1234567890"; };
 string = { nm = dup_tag;         str = "duplicate tag: %s\n"; };
 string = { nm = fopen_z;         str = "fopen"; };

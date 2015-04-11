@@ -16,10 +16,15 @@
 #  You should have received a copy of the GNU General Public License along
 #  with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-bin_PROGRAMS 	       = gnu-pw-mgr
+bin_PROGRAMS 	       = gnu-pw-mgr sort-pw-cfg
 gnu_pw_mgr_SOURCES     = gnu-pw-mgr.c
 gnu_pw_mgr_CPPFLAGS    = $(incs)
 gnu_pw_mgr_LDADD       = $(top_builddir)/libopts/libopts.la \
+	$(top_builddir)/lib/libgnu.la
+
+sort_pw_cfg_SOURCES    = sort-pw-cfg.c
+sort_pw_cfg_CPPFLAGS   = $(incs)
+sort_pw_cfg_LDADD      = $(top_builddir)/libopts/libopts.la \
 	$(top_builddir)/lib/libgnu.la
 
 lib_incs     	= -I$(top_srcdir)/lib -I$(top_srcdir)/src -I$(top_builddir)/lib
@@ -29,7 +34,8 @@ incs            = $(lib_incs) $(ao_incs)
 xtra_src        = <<<variable>>>
 opts_src     	= opts.c opts.h
 opt_src      	= set-opt.c set-opt.h
+sort_opts_src   = sort-opts.c sort-opts.h
 scrib_src    	= scribble.c scribble.h
 str_src         = gpw-str.c gpw-str.h
-gen_src      	= $(opts_src) $(opt_src) $(scrib_src) $(str_src)
+gen_src      	= $(opts_src) $(opt_src) $(sort_opts_src) $(scrib_src) $(str_src)
 EXTRA_DIST   	= $(gen_src) opts.def gpw-str.def $(xtra_src)

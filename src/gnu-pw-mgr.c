@@ -466,7 +466,7 @@ main(int argc, char ** argv)
             arg = *argv;
         else
             arg = assemble_arg(argc, argv);
-        
+
         print_pwid(arg);
 
     } else if (! HAVE_OPT(TAG)) {
