@@ -38,4 +38,4 @@ sort_opts_src   = sort-opts.c sort-opts.h
 scrib_src    	= scribble.c scribble.h
 str_src         = gpw-str.c gpw-str.h
 gen_src      	= $(opts_src) $(opt_src) $(sort_opts_src) $(scrib_src) $(str_src)
-EXTRA_DIST   	= $(gen_src) opts.def gpw-str.def $(xtra_src)
+EXTRA_DIST   	= $(gen_src) opts.def sort-opts.def gpw-str.def $(xtra_src)

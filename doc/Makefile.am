@@ -18,9 +18,12 @@
 
 PROJ_NAME       = gnu-pw-mgr
 INFO_DEPS       = $(PROJ_NAME).info
-BUILT_SOURCES   = invoke-$(PROJ_NAME).texi $(PROJ_NAME).1
+SORT_SRC        = sort-pw-cfg.1 invoke-sort-pw-cfg.texi
+PRJ_SRC         = invoke-$(PROJ_NAME).texi $(PROJ_NAME).1
+INVOKE_SRC      = invoke-$(PROJ_NAME).texi invoke-sort-pw-cfg.texi
+GEN_SOURCES     = $(PRJ_SRC) $(SORT_SRC)
 texi_sources    = fdl.texi intro.texi warnings.texi
-EXTRA_DIST      = $(PROJ_NAME).texi $(texi_sources) $(BUILT_SOURCES)
+EXTRA_DIST      = $(PROJ_NAME).texi $(texi_sources) $(GEN_SOURCES)
 TEXI2DVI_FLAGS  = --texinfo='@pagesizes 9.5in,7.0in'
 info_TEXINFOS   = $(PROJ_NAME).texi
 dist_man1_MANS  = $(PROJ_NAME).1
@@ -29,36 +32,34 @@ passenv         = MAKE=$(MAKE) srcdir="$(srcdir)" SHELL="$(POSIX_SHELL)" \
 
 run_mkman       = $(passenv) $(POSIX_SHELL) $${dashx} mk-gnudoc.sh
 
-all : $(PROJ_NAME).1 invoke-$(PROJ_NAME).texi
+check_exe   = test -x $(top_builddir)/src/$(1) || \
+	{ cd $(top_builddir)/src ; $(MAKE) $(1) ; }
+gen_invoke  = PATH="$(top_builddir)/src:$${PATH}" \
+    autogen -DLEVEL=chapter -MF$@ -b $(1) -T agtexi-cmd.tpl \
+	$(top_srcdir)/src/$(2) ; \
+    test -f $@
+
+all : $(GEN_SOURCES)
 
 $(PROJ_NAME).1 :
-	@-test -x ../src/$(PROJ_NAME) || \
-	cd ../src ; \
-	$(MAKE) $(PROJ_NAME)
-	autogen -MFxxx --help >/dev/null 2>&1 || exit 0 ; \
-	PATH=`cd ../src && pwd`:$${PATH} ; set -x ; \
-	autogen -MFdep-man -b $(PROJ_NAME) -T agman-cmd.tpl ../src/opts.def
+	autogen -MFdep-$@ -b $(PROJ_NAME) -T agman-cmd.tpl ../src/opts.def
 
-# The following is asinine, but the automake rules remove the file without
-# any sort of explanation and I don't want to spend hours figuring out why
-# I am wrong.  The bloody tool is wrong for doing it silently.  I've given
-# enough hints to automake that it should keep its hands off.
-#
-$(PROJ_NAME).texi :
-	cp -fp $(PROJ_NAME)-doc.texi $@
+sort-pw-cfg.1 :
+	autogen -MFdep-$@ -b sort-pw-cfg -T agman-cmd.tpl ../src/sort-opts.def
 
-invoke-$(PROJ_NAME).texi :
-	@-test -x ../src/$(PROJ_NAME) || \
-	cd ../src ; \
-	$(MAKE) $(PROJ_NAME)
-	@autogen -MFxxx --help >/dev/null 2>&1 || exit 0 ; \
-	PATH=`cd ../src && pwd`:$${PATH} ; set -x ; \
-	autogen -DLEVEL=chapter -MFdep-info -b $(PROJ_NAME) \
-		-T agtexi-cmd.tpl ../src/opts.def
-	@test -f $(PROJ_NAME).texi || \
-		cp -fp $(PROJ_NAME)-doc.texi $(PROJ_NAME).texi
+-include dep-invoke-$(PROJ_NAME).texi
+invoke-$(PROJ_NAME).texi : dep-invoke-$(PROJ_NAME).texi
+dep-invoke-$(PROJ_NAME).texi :
+	$(call check_exe,$(PROJ_NAME) )
+	$(call gen_invoke,$(PROJ_NAME),opts.def )
 
-gnudocs             : $(srcdir)/gendocs_template invoke-$(PROJ_NAME).texi
+-include dep-invoke-sort-pw-cfg.texi
+invoke-sort-pw-cfg.texi : dep-invoke-sort-pw-cfg.texi
+dep-invoke-sort-pw-cfg.texi :
+	$(call check_exe,sort-pw-cfg )
+	$(call gen_invoke,sort-pw-cfg,sort-opts.def )
+
+gnudocs : $(INVOKE_SRC) $(srcdir)/gendocs_template
 	$(run_mkman) $@
 
 .NOTPARALLEL:

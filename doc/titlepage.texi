@@ -64,6 +64,7 @@ that describes a browser plug-in that is substantially similar to this program.
 @menu
 * Introduction::                Introduction to password management
 * gnu-pw-mgr Invocation::       Invoking gnu-pw-mgr
+* sort-pw-cfg Invocation::      Invoking sort-pw-cfg
 * warning warning::             Warnings
 * GNU FDL::                     GNU Free Documentation License
 @end menu
@@ -76,6 +77,8 @@ that describes a browser plug-in that is substantially similar to this program.
 @include intro.texi
 
 @include invoke-gnu-pw-mgr.texi
+
+@include invoke-sort-pw-cfg.texi
 
 @include warnings.texi
 

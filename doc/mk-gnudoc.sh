@@ -50,7 +50,7 @@ set_config_values()
 
     nl='
 '   ht='	'
-    : ${MAKE=`which make`}
+    : ${MAKE=`command -v make`}
     : ${srcdir=`pwd`}
     unset CDPATH
 
