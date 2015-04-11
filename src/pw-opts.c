@@ -233,38 +233,33 @@ remove_pwid(char const * name)
 {
     print_pwid_status(name);
     {
+        size_t       mark_len;
         char const * cfg_text = load_config_file();
-        char const * scan     = strstr(cfg_text, pw_id_tag);
-        size_t mark_len;
-        char * mark = make_pwid_mark(name, &mark_len);
+        char *       scan     = strstr(cfg_text, pw_id_tag);
+        char *       mark     = make_pwid_mark(name, &mark_len);
+        bool         found    = false;
 
         if (scan == NULL)
             return;
         scan += pw_id_tag_LEN;
-        mark_len = 0;
 
         while (scan = strstr(scan + 1, mark),
                scan != NULL) {
-            char * sol = scan - pwtag_z_LEN - 1;
-            if (strncmp(sol, pwtag_z, pwtag_z_LEN) != 0) {
-                char buf[64];
-                memcpy(buf, sol - 5, 5);
-                strcpy(buf + 5, "-->");
-                memcpy(buf + 8, sol, pwtag_z_LEN + 5);
-                strcpy(buf + pwtag_z_LEN + 13, "<--\n");
-                die(GNU_PW_MGR_EXIT_CODING_ERROR,
-                    "line start not found here:  %s",
-                    buf);
-            }
-            scan = strstr(scan, pwtag_z);
+            char * sol = scan;
+            found = true;
+
+        find_line_end:
+
+            scan = strstr(scan + mark_len, pwtag_z);
             if (scan == NULL) {
-                mark_len = 1;
                 *sol = NUL;
                 break;
             }
 
-            mark_len = strlen(scan);
-            memmove(sol, scan, mark_len);
+            if (strncmp(scan, mark, mark_len) == 0)
+                goto find_line_end;
+
+            memmove(sol, scan, strlen(scan) + 1);
             scan = sol;
         }
 
