@@ -41,20 +41,21 @@ gen_invoke  = PATH="$(top_builddir)/src:$${PATH}" \
     autogen -DLEVEL=chapter -MF$@ -b $(1) -T agtexi-cmd.tpl \
 	$(top_srcdir)/src/$(2) ; \
     test -f $@
+gen_man     = autogen -MFdep-$@ -b $(1) -T agman-cmd.tpl \
+	$(top_srcdir)/src/$(2) ; \
+    test -f $@
 
 all : $(DEP_FILES)
 
 -include dep-$(PROJ_NAME).1
 $(PROJ_NAME).1 : dep-$(PROJ_NAME).1
 dep-$(PROJ_NAME).1 :
-	autogen -MFdep-$@ -b $(PROJ_NAME) -T agman-cmd.tpl \
-		$(top_srcdir)/src/opts.def
+	$(call gen_man,$(PROJ_NAME),opts.def)
 
 -include dep-sort-pw-cfg.1
 sort-pw-cfg.1 : dep-sort-pw-cfg.1
 dep-sort-pw-cfg.1 :
-	autogen -MFdep-$@ -b sort-pw-cfg -T agman-cmd.tpl \
-		$(top_srcdir)/src/sort-opts.def
+	$(call gen_man,sort-pw-cfg,sort-opts.def)
 
 -include dep-invoke-$(PROJ_NAME).texi
 invoke-$(PROJ_NAME).texi : dep-invoke-$(PROJ_NAME).texi
