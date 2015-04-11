@@ -263,7 +263,7 @@ remove_pwid(char const * name)
             scan = sol;
         }
 
-        if (mark_len != 0) {
+        if (found) {
             char const * fnm = access_config_file();
             FILE * fp = fopen(fnm, "w");
 
