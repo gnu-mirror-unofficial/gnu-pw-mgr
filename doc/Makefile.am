@@ -22,11 +22,14 @@ SORT_SRC        = sort-pw-cfg.1 invoke-sort-pw-cfg.texi
 PRJ_SRC         = invoke-$(PROJ_NAME).texi $(PROJ_NAME).1
 INVOKE_SRC      = invoke-$(PROJ_NAME).texi invoke-sort-pw-cfg.texi
 GEN_SOURCES     = $(PRJ_SRC) $(SORT_SRC)
+DEP_FILES       = dep-invoke-$(PROJ_NAME).texi dep-invoke-sort-pw-cfg.texi \
+	dep-$(PROJ_NAME).1 dep-sort-pw-cfg.1
 texi_sources    = fdl.texi intro.texi warnings.texi
 EXTRA_DIST      = $(PROJ_NAME).texi $(texi_sources) $(GEN_SOURCES)
 TEXI2DVI_FLAGS  = --texinfo='@pagesizes 9.5in,7.0in'
 info_TEXINFOS   = $(PROJ_NAME).texi
-dist_man1_MANS  = $(PROJ_NAME).1
+dist_man1_MANS  = $(PROJ_NAME).1 sort-pw-cfg.1
+
 passenv         = MAKE=$(MAKE) srcdir="$(srcdir)" SHELL="$(POSIX_SHELL)" \
 	top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)"
 
@@ -39,13 +42,19 @@ gen_invoke  = PATH="$(top_builddir)/src:$${PATH}" \
 	$(top_srcdir)/src/$(2) ; \
     test -f $@
 
-all : $(GEN_SOURCES)
+all : $(DEP_FILES)
 
-$(PROJ_NAME).1 :
-	autogen -MFdep-$@ -b $(PROJ_NAME) -T agman-cmd.tpl ../src/opts.def
+-include dep-$(PROJ_NAME).1
+$(PROJ_NAME).1 : dep-$(PROJ_NAME).1
+dep-$(PROJ_NAME).1 :
+	autogen -MFdep-$@ -b $(PROJ_NAME) -T agman-cmd.tpl \
+		$(top_srcdir)/src/opts.def
 
-sort-pw-cfg.1 :
-	autogen -MFdep-$@ -b sort-pw-cfg -T agman-cmd.tpl ../src/sort-opts.def
+-include dep-sort-pw-cfg.1
+sort-pw-cfg.1 : dep-sort-pw-cfg.1
+dep-sort-pw-cfg.1 :
+	autogen -MFdep-$@ -b sort-pw-cfg -T agman-cmd.tpl \
+		$(top_srcdir)/src/sort-opts.def
 
 -include dep-invoke-$(PROJ_NAME).texi
 invoke-$(PROJ_NAME).texi : dep-invoke-$(PROJ_NAME).texi
@@ -58,6 +67,9 @@ invoke-sort-pw-cfg.texi : dep-invoke-sort-pw-cfg.texi
 dep-invoke-sort-pw-cfg.texi :
 	$(call check_exe,sort-pw-cfg )
 	$(call gen_invoke,sort-pw-cfg,sort-opts.def )
+
+clean-local :
+	rm -f dep-* invoke-*.texi invoke-*.menu *.1
 
 gnudocs : $(INVOKE_SRC) $(srcdir)/gendocs_template
 	$(run_mkman) $@
