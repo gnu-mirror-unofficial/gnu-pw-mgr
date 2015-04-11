@@ -1,7 +1,7 @@
 dnl
 dnl  This file is part of gnu-pw-mgr.
 dnl
-dnl  Copyright (C) 2013-2014 Bruce Korb - all rights reserved
+dnl  Copyright (C) 2013-2015 Bruce Korb - all rights reserved
 dnl
 dnl  gnu-pw-mgr is free software: you can redistribute it and/or modify it
 dnl  under the terms of the GNU General Public License as published by the
@@ -45,6 +45,24 @@ m4_popdef([AO_Libopts_Dir])
 	-Wpointer-arith -Wshadow -Wstrict-prototypes -Wwrite-strings \
 	-Wno-format-contains-nul -fno-strict-aliasing -Wstrict-aliasing=2`]
 gl_GC_RANDOM
+AH_TOP([
+#ifndef GNU_PW_MGR_CONFIG_H_GUARD
+#define GNU_PW_MGR_CONFIG_H_GUARD 1])
+
+AH_BOTTOM([
+#ifndef NUL
+# define NUL '\0'
+#endif
+
+#ifndef NL
+# define NL '\n'
+#endif
+
+#ifndef NBBY
+# define NBBY 8 /* Number of Bits per BYte */
+#endif
+
+#endif // GNU_PW_MGR_CONFIG_H_GUARD])
 AC_CHECK_FUNCS_ONCE([tcgetattr tcsetattr getpwuid])
 AC_CONFIG_FILES([Makefile doc/Makefile lib/Makefile src/Makefile tests/Makefile])
 AC_CONFIG_FILES([libopts/Makefile])

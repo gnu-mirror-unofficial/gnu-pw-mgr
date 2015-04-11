@@ -58,10 +58,6 @@ disable-save;         // disable option state saving
 export[2] =<<-_EOF_
 	#include "gpw-str.c"
 
-	#ifndef NBBY
-	#define NBBY 8 /* Number of Bits per BYte */
-	#endif
-
 	#define MIN_PW_LEN         8
 	#define MIN_SEED_TEXT_LEN 64
 	#define MARK_TEXT_LEN     24
@@ -430,7 +426,7 @@ flag            = {
  */
 
 flag = { documentation; name = formatting-options;
-    descrip = 'Options for specifying output format.';
+    descrip = 'Options for management and output format.';
 };
 
 flag            = {
@@ -459,6 +455,17 @@ flag            = {
 
 	Command line options will affect the output, but will not be
 	stored for future use.
+	_EOF_;
+};
+
+flag            = {
+    name        = delete;
+    value       = d;
+    no-preset;
+    descrip     = 'Remove a password entry';
+    doc = <<- _EOF_
+	This will print out the attributes associated with a particular
+	password id and remove them from the configuration file.
 	_EOF_;
 };
 

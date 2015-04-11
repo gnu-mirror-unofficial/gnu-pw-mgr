@@ -18,14 +18,6 @@
 #include "sort-opts.c"
 #include "gpw-str.c"
 
-#ifndef NUL
-#define NUL '\0'
-#endif
-
-#ifndef NL
-#define NL '\n'
-#endif
-
 typedef struct pw_opt_line pw_opt_line_t;
 
 struct pw_opt_line {
@@ -169,7 +161,7 @@ load_domain_attrs(char const * fname, char * text, size_t text_sz)
     if (text == NULL)
         die(SORT_PW_CFG_EXIT_INVALID, "config file %s missing id tag:  %s\n",
             fname, pw_id_tag);
-    text += strlen(pw_id_tag);
+    text += pw_id_tag_LEN;
     *(text++) = NUL;
     while (isspace(*text))
         text++;

@@ -16,63 +16,69 @@
 #  You should have received a copy of the GNU General Public License along
 #  with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-PROJ_NAME       = gnu-pw-mgr
-INFO_DEPS       = $(PROJ_NAME).info
-SORT_SRC        = sort-pw-cfg.1 invoke-sort-pw-cfg.texi
-PRJ_SRC         = invoke-$(PROJ_NAME).texi $(PROJ_NAME).1
-INVOKE_SRC      = invoke-$(PROJ_NAME).texi invoke-sort-pw-cfg.texi
-GEN_SOURCES     = $(PRJ_SRC) $(SORT_SRC)
-DEP_FILES       = dep-invoke-$(PROJ_NAME).texi dep-invoke-sort-pw-cfg.texi \
-	dep-$(PROJ_NAME).1 dep-sort-pw-cfg.1
+DEP_FILES       =
+MAN_PAGES       =
+TEXI_DOC        =
+GEN_SOURCES     = $(MAN_PAGES) $(TEXI_DOC)
 texi_sources    = fdl.texi intro.texi warnings.texi
-EXTRA_DIST      = $(PROJ_NAME).texi $(texi_sources) $(GEN_SOURCES)
+dist_man1_MANS  = $(MAN_PAGES)
+info_TEXINFOS   = gnu-pw-mgr.texi
+EXTRA_DIST      = $(info_TEXINFOS) $(texi_sources) $(GEN_SOURCES)
 TEXI2DVI_FLAGS  = --texinfo='@pagesizes 9.5in,7.0in'
-info_TEXINFOS   = $(PROJ_NAME).texi
-dist_man1_MANS  = $(PROJ_NAME).1 sort-pw-cfg.1
 
-passenv         = MAKE=$(MAKE) srcdir="$(srcdir)" SHELL="$(POSIX_SHELL)" \
+passenv     = MAKE=$(MAKE) srcdir="$(srcdir)" SHELL="$(POSIX_SHELL)" \
 	top_builddir="$(top_builddir)" top_srcdir="$(top_srcdir)"
 
-run_mkman       = $(passenv) $(POSIX_SHELL) $${dashx} mk-gnudoc.sh
+run_mkman   = $(passenv) $(POSIX_SHELL) $${dashx} mk-gnudoc.sh
 
 check_exe   = test -x $(top_builddir)/src/$(1) || \
 	{ cd $(top_builddir)/src ; $(MAKE) $(1) ; }
+
 gen_invoke  = PATH="$(top_builddir)/src:$${PATH}" \
     autogen -DLEVEL=chapter -MF$@ -b $(1) -T agtexi-cmd.tpl \
 	$(top_srcdir)/src/$(2) ; \
     test -f $@
+
 gen_man     = autogen -MFdep-$@ -b $(1) -T agman-cmd.tpl \
 	$(top_srcdir)/src/$(2) ; \
     test -f $@
 
 all : $(DEP_FILES)
 
--include dep-$(PROJ_NAME).1
-$(PROJ_NAME).1 : dep-$(PROJ_NAME).1
-dep-$(PROJ_NAME).1 :
-	$(call gen_man,$(PROJ_NAME),opts.def)
+DEP_FILES += dep-gnu-pw-mgr.1
+MAN_PAGES += gnu-pw-mgr.1
+-include dep-gnu-pw-mgr.1
+dep-gnu-pw-mgr.1 :
+	$(call gen_man,gnu-pw-mgr,opts.def)
+gnu-pw-mgr.1 : dep-gnu-pw-mgr.1
 
+MAN_PAGES += sort-pw-cfg.1
+DEP_FILES += dep-sort-pw-cfg.1
 -include dep-sort-pw-cfg.1
-sort-pw-cfg.1 : dep-sort-pw-cfg.1
 dep-sort-pw-cfg.1 :
 	$(call gen_man,sort-pw-cfg,sort-opts.def)
+sort-pw-cfg.1 : dep-sort-pw-cfg.1
 
--include dep-invoke-$(PROJ_NAME).texi
-invoke-$(PROJ_NAME).texi : dep-invoke-$(PROJ_NAME).texi
-dep-invoke-$(PROJ_NAME).texi :
-	$(call check_exe,$(PROJ_NAME) )
-	$(call gen_invoke,$(PROJ_NAME),opts.def )
+DEP_FILES += dep-invoke-gnu-pw-mgr.texi
+TEXI_DOC  += invoke-gnu-pw-mgr.texi
+-include dep-invoke-gnu-pw-mgr.texi
+dep-invoke-gnu-pw-mgr.texi :
+	$(call check_exe,gnu-pw-mgr )
+	$(call gen_invoke,gnu-pw-mgr,opts.def )
+invoke-gnu-pw-mgr.texi : dep-invoke-gnu-pw-mgr.texi
 
+DEP_FILES += dep-invoke-sort-pw-cfg.texi
+TEXI_DOC  += invoke-sort-pw-cfg.texi
 -include dep-invoke-sort-pw-cfg.texi
-invoke-sort-pw-cfg.texi : dep-invoke-sort-pw-cfg.texi
 dep-invoke-sort-pw-cfg.texi :
 	$(call check_exe,sort-pw-cfg )
 	$(call gen_invoke,sort-pw-cfg,sort-opts.def )
+invoke-sort-pw-cfg.texi : dep-invoke-sort-pw-cfg.texi
 
 clean-local :
 	rm -f dep-* invoke-*.texi invoke-*.menu *.1
 
-gnudocs : $(INVOKE_SRC) $(srcdir)/gendocs_template
+gnudocs : $(TEXI_DOC) $(srcdir)/gendocs_template
 	$(run_mkman) $@
 
 .NOTPARALLEL:

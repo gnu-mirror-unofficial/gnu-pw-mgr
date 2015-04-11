@@ -23,9 +23,6 @@ more-help-value = M;  // use '-M' not '-!'
 export[2] =<<-_EOF_
 	#include "gpw-str.h"
 
-	#ifndef NBBY
-	#define NBBY 8 /* Number of Bits per BYte */
-	#endif
         static unsigned int const secure_mask = S_IRWXG | S_IRWXO;
 	extern char const * config_file_name;
 	extern char const * leader_text;

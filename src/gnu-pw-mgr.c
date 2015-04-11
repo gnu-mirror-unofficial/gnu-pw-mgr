@@ -1,7 +1,7 @@
 /*
  *  This file is part of gpw.
  *
- *  Copyright (C) 2013-2014 Bruce Korb, all rights reserved.
+ *  Copyright (C) 2013-2015 Bruce Korb, all rights reserved.
  *  This is free software. It is licensed for use, modification and
  *  redistribution under the terms of the GNU General Public License,
  *  version 3 or later <http://gnu.org/licenses/gpl.html>
@@ -245,6 +245,11 @@ print_pwid(char const * name)
     set_pwid_opts(name);
     if (HAVE_OPT(STATUS)) {
         print_pwid_status(name);
+        return;
+    }
+
+    if (HAVE_OPT(DELETE)) {
+        remove_pwid(name);
         return;
     }
 
