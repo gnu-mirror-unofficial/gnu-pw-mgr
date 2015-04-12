@@ -20,6 +20,8 @@
  *  with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef SORT_PW_CFG // code for gnu-pw-mgr only
+
 /**
  * Gain access to the config file.  \a set_config_name must have been
  * called previously.  This function figures out the current size and
@@ -123,6 +125,7 @@ load_config_file(void)
 
 #define config_file_name config_file_name used in invalid context
 #define config_file_size config_file_size used in invalid context
+#endif // not SORT_PW_CFG only
 
 /**
  * Find the user's home directory.  There are two implementations.

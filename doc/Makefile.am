@@ -20,11 +20,11 @@ DEP_FILES       =
 MAN_PAGES       =
 TEXI_DOC        =
 MENU_FILES      =
-GEN_SOURCES     = $(MAN_PAGES) $(TEXI_DOC)
+GEN_FILES       = $(MAN_PAGES) $(TEXI_DOC)
 texi_sources    = fdl.texi intro.texi warnings.texi
 dist_man1_MANS  = $(MAN_PAGES)
 info_TEXINFOS   = gnu-pw-mgr.texi
-EXTRA_DIST      = $(info_TEXINFOS) $(texi_sources) $(GEN_SOURCES)
+EXTRA_DIST      = $(info_TEXINFOS) $(texi_sources) $(GEN_FILES)
 TEXI2DVI_FLAGS  = --texinfo='@pagesizes 9.5in,7.0in'
 
 passenv     = MAKE=$(MAKE) srcdir="$(srcdir)" SHELL="$(POSIX_SHELL)" \
@@ -36,18 +36,21 @@ check_exe   = test -x $(top_builddir)/src/$(1) || \
 	{ cd $(top_builddir)/src ; $(MAKE) $(1) ; }
 
 gen_invoke  = PATH="$(top_builddir)/src:$${PATH}" \
+    top_srcdir="$(top_srcdir)" \
     autogen -DLEVEL=chapter -MF$@ -b $(1) -T agtexi-cmd.tpl \
 	$(top_srcdir)/src/$(2) ; \
     test -f $@
 
-gen_man     = autogen -MF$@ -b $(1) -T agman-cmd.tpl \
+gen_man     = \
+    top_srcdir="$(top_srcdir)" \
+    autogen -MF$@ -b $(1) -T agman-cmd.tpl \
 	$(top_srcdir)/src/$(2) ; \
     test -f $@
 
 all : $(DEP_FILES)
 
 clean-local :
-	rm -f $(DEP_FILES) $(GEN_SOURCES) $(MENU_FILES)
+	rm -f $(DEP_FILES) $(GEN_FILES) $(MENU_FILES)
 
 gnudocs : $(TEXI_DOC) $(srcdir)/gendocs_template
 	$(run_mkman) $@

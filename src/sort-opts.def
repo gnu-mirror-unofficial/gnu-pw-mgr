@@ -48,38 +48,41 @@ flag            = {
 	_EOF_;
 };
 
+flag            = {
+    name        = default;
+    value       = d;
+    descrip     = 'select default config file for first input file';
+    doc = <<- _EOF_
+	Instead of starting with the first operand (or first file in
+	the standard input file list), start processing password id's
+	with the contents of the standard configuration file.
+	The additional files will override or augment this file.
+	_EOF_; // '
+};
+
 main = {
     main-type       = for-each;
     handler-proc    = load_domain_attrs;
     handler-type    = some-text-of-file;
     handler-frees;
     main-fini       = '    res |= emit_new_text();';
+    main-init = <<- _EOF_
+	\    if (HAVE_OPT(DEFAULT)) {
+	\        char * fname = find_cfg_name();
+	\        res |= validate_fname(fname);
+	\        free(fname);
+	\    }
+
+	_EOF_;
 };
 
-/*
- # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
- #
- #  D O C U M E N T A T I O N   A T T R I B U T E S
- #
- # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
- */
-exit-name[1]  = invalid;
-exit-desc[1]  = 'the option/argument configuration is invalid';
-
-exit-name[2]  = no-mem;
-exit-desc[2]  = 'insufficient memory';
-
-exit-name[4]  = homeless;
-exit-desc[4]  = 'home directory could not be found';
-
-exit-name[6]  = no-config;
-exit-desc[6]  = 'config file missing';
-
-exit-name[7]  = bad-config;
-exit-desc[7]  = 'cannot update config file';
-
-exit-name[10] = coding-error;
-exit-desc[10] = 'There is a coding error that should be reported';
+#shell
+if test ${#top_srcdir} -gt 0
+then srcdir=${top_srcdir}/src
+else srcdir=.
+fi
+grep '^exit-' ${srcdir}/opts.def
+#endshell
 
 detail = <<-  _EOF_
 	This program will sort (and merge) the per-domain password attributes.

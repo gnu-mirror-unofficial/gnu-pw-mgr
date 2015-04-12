@@ -7,6 +7,7 @@
 #include <sys/stat.h>
 
 #include <ctype.h>
+#include <pwd.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,8 +16,19 @@
 #include "sort-opts.h"
 #include "gpw-str.h"
 
+static char * find_cfg_name(void);
+
 #include "sort-opts.c"
 #include "gpw-str.c"
+
+#define xscribble_get malloc
+#define GNU_PW_MGR_EXIT_NO_MEM      SORT_PW_CFG_EXIT_NO_MEM
+#define GNU_PW_MGR_EXIT_HOMELESS    SORT_PW_CFG_EXIT_HOMELESS
+#define GNU_PW_MGR_EXIT_PERM        SORT_PW_CFG_EXIT_PERM
+#define GNU_PW_MGR_EXIT_NO_CONFIG   SORT_PW_CFG_EXIT_NO_CONFIG
+#define set_config_name(_f)
+#include "cfg-file.c"
+#undef xscribble_get
 
 typedef struct pw_opt_line pw_opt_line_t;
 
