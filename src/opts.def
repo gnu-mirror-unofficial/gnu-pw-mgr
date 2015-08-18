@@ -633,3 +633,27 @@ doc-section = {
 	Password ids are not stored anywhere.
 	_EndOfText_;
 };
+
+export[0] = <<- _EOF_
+	
+	#include <ctype.h>
+	#include <errno.h>
+	#include <fcntl.h>
+	#include <inttypes.h>
+	#include <pwd.h>
+	#include <stdbool.h>
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <stdnoreturn.h>
+	#include <string.h>
+	#include <sys/mman.h>
+	#include <sys/stat.h>
+	#include <sys/types.h>
+	#include <termios.h>
+	#include <time.h>
+	#include <unistd.h>
+
+	#include "base64.h"
+	#include "gc.h"
+	#include "sha256.h"
+	_EOF_;

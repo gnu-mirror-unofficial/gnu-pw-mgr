@@ -1,3 +1,8 @@
+New in 1.5 - August, 2015
+
+* PIN number passwords got broken somewhere along the line.
+  Nobody much uses tham.  (A good thing.)
+
 New in 1.4 - April, 2015
 
 * sort-pw-cfg: a sort/merge program for combining and organizing
