@@ -56,13 +56,18 @@ To: ${to_line}
 Subject: Release of version ${version} of ${project}
 Reply-To: bug-gnu-utils@gnu.org
 
-This program is designed to make it easy to reconstruct difficult
-passwords when they are needed while limiting the risk of attack.
-The user of this program inputs a self-defined transformation of a web site
-URL and obtains the password and user name hint for that web site.
-You must, however, be able to remember this password id, or the password
-is lost forever.
+GNU gnu-pw-mgr "manages" passwords by re-computing them on demand.
+It does an sha256 sum of a long, unguessable string stored in a
+protected file conjoined with a never-recorded private permutation of
+a domain name.  The result is cropped and twiddled in repeatable ways
+to satisfy the password requirements of the intended web site.
+By basing the check sum on a permutation of a domain, it winds up
+easier to have different passwords for different domains than to
+overuse a single password.
 
+Since its initial release, none of the algorithms have changed, so
+previously created passwords will still be produced by this modified
+program.
 _EOF_
 
 while read -u4 text
@@ -77,12 +82,13 @@ sed '/^New in /,$d;//d' >&3 <&4
 exec 4<&-
 
 cat >&3 <<_EOF_
-${project} home:  http://www.gnu.org/software/${project}/
+online docs:     http://www.gnu.org/software/gnu-pw-mgr/manual/html_node/index.html
+gnu-pw-id home:  http://www.gnu.org/software/gnu-pw-mgr/
 primary ftp:     ${ftpurl}/
 .tar.gz:         ${ftpurl}/${project}-${version}.tar.gz
-bug reports:     bkorb at the usual GNU domain
-bug archive:     http://lists.gnu.org/mailman/listinfo/bug-gnu-utils/
-maintainer:      ${fullname} - ${sender} at the usual GNU domain
+bug reports:     bug-gnu-pw-mgr at the usual GNU domain
+bug archive:     https://lists.gnu.org/mailman/listinfo/bug-gnu-pw-mgr
+maintainer:      Bruce Korb - bkorb at the usual GNU domain 
 _EOF_
 
 exec 3>&-

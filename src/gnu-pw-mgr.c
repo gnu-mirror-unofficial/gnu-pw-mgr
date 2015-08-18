@@ -56,7 +56,7 @@ adjust_pw(char * buf, size_t bsz, unsigned char * data, size_t d_len)
             + 10
 #endif
             ;
-        uint32_t mx = (sizeof(uintptr_t) / d_len) * bytes_per_val;
+        uint32_t mx = (d_len / sizeof(uintptr_t)) * bytes_per_val;
         if (OPT_VALUE_LENGTH > mx)
             die(GNU_PW_MGR_EXIT_INVALID, pin_too_big,
                 (uint32_t)OPT_VALUE_LENGTH, mx);
