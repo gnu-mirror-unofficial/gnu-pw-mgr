@@ -35,22 +35,11 @@ static void
 adjust_pw(char * buf, size_t bsz, unsigned char * data, size_t d_len)
 {
     char * dta = (char *)data;
-    switch (OPT_VALUE_CCLASS & (CCLASS_NO_ALPHA | CCLASS_NO_SPECIAL)) {
-    case 0:
-    case CCLASS_NO_SPECIAL:
-        base64_encode(dta, d_len, buf, bsz);
-        buf[OPT_VALUE_LENGTH] = '\0';
-        fix_std_pw(buf);
-        break;
+    unsigned int cclass = OPT_VALUE_CCLASS & (CCLASS_NO_ALPHA | CCLASS_NO_SPECIAL);
 
-    case CCLASS_NO_ALPHA:
-        base64_encode(dta, d_len, buf, bsz);
-        buf[OPT_VALUE_LENGTH] = '\0';
-        fix_no_alpha_pw(buf);
-        break;
-
-    case CCLASS_NO_ALPHA | CCLASS_NO_SPECIAL:
-    {
+    // Check for PIN number password:
+    //
+    if (cclass == (CCLASS_NO_ALPHA | CCLASS_NO_SPECIAL)) {
         static uint32_t const bytes_per_val = 7
 #if SIZEOF_CHARP > 4
             + 10
@@ -62,8 +51,25 @@ adjust_pw(char * buf, size_t bsz, unsigned char * data, size_t d_len)
                 (uint32_t)OPT_VALUE_LENGTH, mx);
 
         fix_digit_pw(buf, (uintptr_t *)data);
+        return;
     }
+
+    base64_encode(dta, d_len, buf, bsz);
+
+    // Check for confirmation answer password
+    //
+    if (HAVE_OPT(CONFIRM)) {
+        buf[CONFIRM_LEN] = '\0';
+        fix_lower_only_pw(buf);
+        return;
     }
+
+    buf[OPT_VALUE_LENGTH] = '\0';
+
+    if (cclass == CCLASS_NO_ALPHA)
+        fix_no_alpha_pw(buf);
+    else
+        fix_std_pw(buf);
 }
 
 /**
@@ -90,6 +96,8 @@ get_dft_pw(char * buf, size_t bsz,
     sha256_process_bytes(tag, strlen(tag)+1, &ctx);
     sha256_process_bytes(txt, strlen(txt)+1, &ctx);
     sha256_process_bytes(nam, strlen(nam)+1, &ctx);
+    if (HAVE_OPT(CONFIRM))
+        sha256_process_bytes(OPT_ARG(CONFIRM), strlen(OPT_ARG(CONFIRM))+1, &ctx);
     sha256_finish_ctx(&ctx, sum.sha_buf);
 
     adjust_pw(buf, bsz, sum.sha_buf, sizeof(sum.sha_buf));
@@ -111,17 +119,24 @@ get_pbkdf2_pw(char * buf, size_t bsz,
 {
     size_t tag_len = strlen(tag) + 1;
     size_t nam_len = strlen(nam) + 1;
+    size_t cfm_len = HAVE_OPT(CONFIRM) ? (strlen(OPT_ARG(CONFIRM)) + 1) : 0;
+
     size_t hash_ln = 4 + ((bsz * 6) >> 3);
 
-    char * nam_tag = scribble_get(tag_len + nam_len);
+    char * nam_tag = scribble_get(tag_len + nam_len + cfm_len);
     char * hash_bf = scribble_get(hash_ln);
     Gc_rc rc;
 
     memcpy(nam_tag, tag, tag_len);
     memcpy(nam_tag + tag_len, nam, nam_len);
+    tag_len += nam_len;
+    if (cfm_len > 0) {
+        memcpy(nam_tag + tag_len, OPT_ARG(CONFIRM), cfm_len);
+        tag_len += cfm_len;
+    }
 
     rc = gc_pbkdf2_sha1(
-        nam_tag, tag_len + nam_len,
+        nam_tag, tag_len,
         txt, strlen(txt) + 1,
         OPT_VALUE_PBKDF2,
         hash_bf, hash_ln);

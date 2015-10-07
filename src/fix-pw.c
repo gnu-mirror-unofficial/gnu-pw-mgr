@@ -103,6 +103,34 @@ fix_no_alpha_pw(char * pw)
 }
 
 /**
+ * Make all characters lower case.
+ *
+ * @param[in,out] pw  the password buffer
+ */
+static void
+fix_lower_only_pw(char * pw)
+{
+    for (;;) {
+        unsigned char ch = *(pw++);
+        if (ch == NUL)
+            break;
+
+        if (islower(ch))
+            continue;
+
+        if (isupper(ch)) {
+            pw[-1] = 'a' + (ch - 'A');
+            continue;
+        }
+
+        // we have a digit or '+' or '/' from base64 encoding.
+        // these will map thus:  0-9 -> a-j, '+' -> l, '/' -> p
+        //
+        pw[-1] = 'a' + (ch & 0x0F);
+    }
+}
+
+/**
  * The character was a special character, but special characters are
  * not allowed.  Therefore, choose a digit, upper or lower case character.
  *

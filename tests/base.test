@@ -102,6 +102,18 @@ run_test() {
         die $'results differ\n'"$samp became $f"
     ck_test 'TEST ONLY TAG' "login-id  = 'test-tag'"
 
+    samp='xkzrraogchyh'
+    f=`$gpw --confirm dog who | \
+        awk '/TEST ONLY TAG/{print $4}'`
+    test "X$f" = "X$samp" || \
+        die $'results for "--confirm dog" differ\n'"$samp became $f"
+
+    samp='brrxsbesatfj'
+    f=`$gpw --confirm pet who | \
+        awk '/TEST ONLY TAG/{print $4}'`
+    test "X$f" = "X$samp" || \
+        die $'results for "--confirm pet" differ\n'"$samp became $f"
+
     trial='try 98'
     samp='MYjChXuWGsJZ7n1PWbZmOC6KKK/fFCcGc29imK/o'
     f=`$gpw --no-pbkdf2 -l40 $trial | awk '/KKK/{print $4}'`

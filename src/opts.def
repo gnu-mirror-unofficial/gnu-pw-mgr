@@ -61,6 +61,7 @@ export[2] =<<-_EOF_
 	#define MIN_PW_LEN         8
 	#define MIN_SEED_TEXT_LEN 64
 	#define MARK_TEXT_LEN     24
+	#define CONFIRM_LEN       12
 	#define MIN_BUF_LEN ((256 / NBBY) + (256 / (NBBY * 2))) // 48
 	#define VER_TO_INT(_maj, _min, _rev) \
 	\	(((_maj)<<20) + ((_min)<<10) + (_rev))
@@ -439,6 +440,33 @@ flag            = {
 	Suppressing it is intended for automated logins.
 	The login name hint will not be provided, but the
 	@code{tag} is printed.
+	_EOF_;
+};
+
+flag            = {
+    name        = confirm;
+    value       = C;
+    arg-type    = string;
+    no-preset;
+    descrip     = 'print confirmation question answer';
+    doc = <<- _EOF_
+	Some web sites use "confirmation questions" that, supposedly, only
+	you know the answer to.  Unfortunately, these are often times
+	questions that can be researched by others or they can be questions
+	that you have forgotten the answers to or may have multiple answers
+	for.  The net result is that you are locked out.  This option makes
+	it easy to get consistent answers to these questions and have these
+	answers be different for every web site, just like your password.
+
+	Providing this option will cause the argument to be merged into the
+	hash source (changing the resulting password).  Exactly 12 letters
+	will be extracted from the hash and converted to lower case.  The
+	string argument to this option should be the last word or two from
+	the question, yielding an easy-to-remember way of obtaining a
+	consistent answer to these inscrutable questions.
+
+	You will need to update your confirmation question answers when
+	you update your password seed.
 	_EOF_;
 };
 

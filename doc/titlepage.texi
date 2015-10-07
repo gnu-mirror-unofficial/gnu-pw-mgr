@@ -9,7 +9,7 @@
 @settitle @value{TITLE}
 @dircategory Miscellenaeous tools
 @direntry
-* gnu-pw-mgr: (gnu-pw-mgr).     GNU Password Manager
+* gnu-pw-mgr: (gnu-pw-mgr).     GNU Password and Security Questions Manager
 @end direntry
 @setchapternewpage off
 @syncodeindex pg cp
