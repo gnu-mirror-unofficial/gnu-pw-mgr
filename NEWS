@@ -1,3 +1,9 @@
+New in 1.6 - October, 2015
+
+* A fix for security questions.  They are too hard to remember,
+  consistent from web site to web site.  A "--confirm" option
+  has been added to provide secure answers to these questions.
+
 New in 1.5 - August, 2015
 
 * PIN number passwords got broken somewhere along the line.
