@@ -169,13 +169,20 @@ add_seed(void)
 
         if (fp == NULL)
             fserr(GNU_PW_MGR_EXIT_NO_CONFIG, fopen_z, cfg_file);
-        p = strstr(cfg_text, pw_id_tag);
-        if (p != NULL)
-            wlen = p - cfg_text;
-        else
-            wlen = strlen(cfg_text);
-        if (wlen > 0)
-            fwrite(cfg_text, wlen, 1, fp);
+
+        if (HAVE_OPT(SECONDARY)) {
+            p = cfg_text;
+
+        } else {
+            p = strstr(cfg_text, pw_id_tag);
+            if (p != NULL)
+                wlen = p - cfg_text;
+            else
+                wlen = strlen(cfg_text);
+
+            if (wlen > 0)
+                fwrite(cfg_text, wlen, 1, fp);
+        }
 
         seed_txt = get_seed_text();
 

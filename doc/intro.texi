@@ -31,6 +31,7 @@ issues and describe how this program addresses them.
 * Defenses::                    How to keep evil-doers at bay
 * how-it-works::                How gnu-pw-mgr helps
 * security questions::          The answers to security questions
+* sharing passwords::           Sharing a password with someone
 @end menu
 
 @node Threats
@@ -181,3 +182,66 @@ be answers to the questions, @samp{what was your dog's name} or
 @samp{what was your favorite pet}, for example.  These answers are
 valid only for the @samp{who} password id and the test's seed string.
 With a different password id or seed, you would get a different answer.
+
+@node sharing passwords
+@section Sharing a password with someone
+
+Sometimes in a household or with a partnership it becomes necessary
+to have a common login to some web sites.  To accommodate this and
+to not reveal to your partners how to login to the rest of your world,
+a new option has been added:  @code{--secondary}.
+
+This marks the associated @code{--tag} and @code{--text} options as
+being ``secondary'' -- i.e. not being listed last.  To remind yourself
+that you need to use this secondary password, you need to put a reminder
+into the @code{--login-id} option for the usual domain transform.
+
+@strong{FOR EXAMPLE}:
+
+Assume you wish to share your @file{nytimes.com} login.  Let's say
+your id transformation is to apply ``hi %s -- it is me'' to your
+domain names, yielding ``hi amazon.com -- it is me'' for your normal
+Amazon login.  But you do not want to reveal that to your partner.
+Instead, you want to use, ``it is us, %s'' yielding a password id
+of ``it is us, nytimes.com''.  More likely than not, you will forget.
+Therefore, do the following:
+
+@example
+gnu-pw-mgr --tag xxx --secondary --text \
+    'peter piper picked a peck of pickled peppers\
+ Peter piper is in a pickle rut.'\
+    
+gnu-pw-mgr --log 'use xxx tag' it is us, nytimes.com
+gnu-pw-mgr --log "it's us" hi nytimes.com -- it is me
+@end example
+
+now when you try the standard transform of @file{nytimes.com}, you
+get the reminder, ``it's us'' and the correct login id will remind
+you to use the password tagged, ``xxx''.  e.g.:
+
+@example
+$ gnu-pw-mgr hi nytimes.com -- it is me
+
+seed-tag     login id hint: it is us   pw:
+xxx          E1qTmXqhObj4Gkmr
+first        XDmP4XoHWkQpKelQ
+$ gnu-pw-mgr it is us, nytimes.com
+
+seed-tag     login id hint: use xxx tag   pw:
+xxx          RNL7fh2dWq9CIfmp
+first        JpuEUTzgZwiRX4gm
+$ cat ~/.local/gnupwmgr.cfg 
+
+<seed>
+  <tag>xxx</tag><ver type=integer>1054720</ver>
+  <text>peter piper picked a peck of pickled peppers Peter piper is in a pickle rut.</text>
+</seed>
+
+<seed>
+  <tag>first</tag><ver type=integer>1054720</ver>
+  <text>the quick brown fox jumped over all of the incredibly lazy dogs!!!</text>
+</seed>
+<program per_pw_id>
+<pwtag id="b3zcBQvr3UPX+x4n/88DAgbv">login-id  = 'use xxx tag'</pwtag>
+<pwtag id="hEhyf07YdXM3pTOF3F1nQpJx">login-id  = 'it is us'</pwtag>
+@end example

@@ -192,6 +192,22 @@ flag            = {
 	_EOF_;
 };
 
+flag            = {
+    name        = secondary;
+    flags-must  = text, seed;
+    descrip     = 'secondary tag';
+    flags-cant  = login-id, cclass, length, specials, no-header, pbkdf2;
+    no-preset;
+
+    doc = <<- _EOF_
+	This option places the new seed as the oldest seed in the configuration.
+	This is useful if you must to share a login with someone and you do
+	not wish to reveal the details of your remaining login credentials.
+	Unfortunately, some web sites make this necessary for some family
+	accounts.  See the documentation.
+	_EOF_;
+};
+
 /*
  # * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *
