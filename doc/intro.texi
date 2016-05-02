@@ -210,13 +210,13 @@ Therefore, do the following:
 gnu-pw-mgr --tag xxx --secondary --text \
     'peter piper picked a peck of pickled peppers\
  Peter piper is in a pickle rut.'\
-    
+
 gnu-pw-mgr --log 'use xxx tag' it is us, nytimes.com
-gnu-pw-mgr --log "it's us" hi nytimes.com -- it is me
+gnu-pw-mgr --log "it is us" hi nytimes.com -- it is me
 @end example
 
 now when you try the standard transform of @file{nytimes.com}, you
-get the reminder, ``it's us'' and the correct login id will remind
+get the reminder, ``it is us'' and the correct login id will remind
 you to use the password tagged, ``xxx''.  e.g.:
 
 @example

@@ -163,7 +163,7 @@ add_seed(void)
     {
         char const * cfg_file = access_config_file();
         FILE * fp = fopen(cfg_file, "w");
-        char * p;
+        char const * p;
         size_t wlen;
         char const * seed_txt;
 
