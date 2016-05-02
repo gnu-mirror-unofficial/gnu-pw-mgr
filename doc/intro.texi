@@ -223,23 +223,25 @@ you to use the password tagged, ``xxx''.  e.g.:
 $ gnu-pw-mgr hi nytimes.com -- it is me
 
 seed-tag     login id hint: it is us   pw:
-xxx          E1qTmXqhObj4Gkmr
-first        XDmP4XoHWkQpKelQ
+xxx          HeTuldhc31wdEG6i
+first        SKxFwX0v+SSr4w2E
+~
 $ gnu-pw-mgr it is us, nytimes.com
 
 seed-tag     login id hint: use xxx tag   pw:
-xxx          RNL7fh2dWq9CIfmp
-first        JpuEUTzgZwiRX4gm
+xxx          pbQ2BW0YXh2n461o
+first        XKX/gOPUgIcL3BoY
+~
 $ cat ~/.local/gnupwmgr.cfg 
 
 <seed>
-  <tag>xxx</tag><ver type=integer>1054720</ver>
-  <text>peter piper picked a peck of pickled peppers Peter piper is in a pickle rut.</text>
+  <tag>xxx</tag><ver type=integer>1054722</ver>
+  <text>peter Piper [...] in a pickle rut.</text>
 </seed>
 
 <seed>
-  <tag>first</tag><ver type=integer>1054720</ver>
-  <text>the quick brown fox jumped over all of the incredibly lazy dogs!!!</text>
+  <tag>first</tag><ver type=integer>1054722</ver>
+  <text>the quick brown fox [...] dogs!!!</text>
 </seed>
 <program per_pw_id>
 <pwtag id="b3zcBQvr3UPX+x4n/88DAgbv">login-id  = 'use xxx tag'</pwtag>
