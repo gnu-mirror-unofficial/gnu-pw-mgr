@@ -1,3 +1,10 @@
+New in 2.0 - May, 2016
+
+* A new option --secondary to implement "secondary" password ids.
+  This allows shared logins with secure passwords and still
+  keeps all the other passwords very secret.  See the docs for
+  the rationale.
+
 New in 1.6 - October, 2015
 
 * A fix for security questions.  They are too hard to remember,
@@ -15,35 +22,3 @@ New in 1.4 - April, 2015
   configurations.
 
 * --delete: a new option to remove any entries for a password id
-
-New in 1.3 - February, 2015
-
-* add-on: a directory of ancillary helpful stuff.  Today:
-  conkeror: scripts and usage information for using a GUI wrapper
-
-* documentation cleanups and clarifications.
-
-New in 1.2 - March, 2014
-
-* New option:  selection of password characters (--select-chars)
-  There is a bank on this planet that requires you to enter
-  specific characters from your password -- not the entire thing.
-
-* When reading in password id's from stdin, allow the stdin/out
-  to be non-terminals so this program can be used as a web page
-  service.
-
-New in 1.1 - January 2014
-
-* a --status option will display the status of a password id.
-  This will only tell you if there are special password attributes.
-
-* passwords can require two characters from one class.
-  This can now be specified for upper case letters, lower case
-  letters, digits and special characters (punctuation).
-  This is not supported for either "two of any alpha" or "two of
-  any alphanumeric".
-
-New in 1.0 - November 2013
-
-* This is a new project
