@@ -146,6 +146,14 @@ get_pbkdf2_pw(char * buf, size_t bsz,
     adjust_pw(buf, bsz, (unsigned char *)hash_bf, hash_ln);
 }
 
+static void
+print_pwid_header(char const * name)
+{
+    static char const hdr_fmt[]  = "password id '%s'%s:\n";
+    static char const is_sec[]   = " (secondary password)";
+    printf(hdr_fmt, name, ENABLED_OPT(SECONDARY) ? is_sec : "");
+}
+
 /**
  * Print the passwords for \a name.
  * @param name  the name/id for which a password is needed
@@ -153,21 +161,20 @@ get_pbkdf2_pw(char * buf, size_t bsz,
 static void
 print_pwid_status(char const * name)
 {
-    static char const hdr_fmt[]  = "password id '%s':\n";
     static char const lstr_fmt[] = "  %-10s %s\n";
     static char const ldig_fmt[] = "  %-10s %u\n";
 
     bool have_data = false;
 
     if (HAVE_OPT(LOGIN_ID)) {
-        printf(hdr_fmt, name);
         have_data = true;
+        print_pwid_header(name);
         printf(lstr_fmt, "login-id", OPT_ARG(LOGIN_ID));
     }
 
     if (HAVE_OPT(LENGTH)) {
         if (! have_data) {
-            printf(hdr_fmt, name);
+            print_pwid_header(name);
             have_data = true;
         }
         printf(ldig_fmt, "length", (unsigned int)OPT_VALUE_LENGTH);
@@ -175,7 +182,7 @@ print_pwid_status(char const * name)
 
     if (HAVE_OPT(PBKDF2) || (OPT_VALUE_LENGTH > (MIN_BUF_LEN - 8))) {
         if (! have_data) {
-            printf(hdr_fmt, name);
+            print_pwid_header(name);
             have_data = true;
         }
         if (ENABLED_OPT(PBKDF2) || (OPT_VALUE_LENGTH > (MIN_BUF_LEN - 8)))
@@ -186,7 +193,7 @@ print_pwid_status(char const * name)
 
     if (HAVE_OPT(SPECIALS)) {
         if (! have_data) {
-            printf(hdr_fmt, name);
+            print_pwid_header(name);
             have_data = true;
         }
         printf(lstr_fmt, "spec chars", OPT_ARG(SPECIALS));
@@ -196,7 +203,7 @@ print_pwid_status(char const * name)
         char const * names;
 
         if (! have_data) {
-            printf(hdr_fmt, name);
+            print_pwid_header(name);
             have_data = true;
         }
         doOptCclass(OPTPROC_RETURN_VALNAME, &DESC(CCLASS));
