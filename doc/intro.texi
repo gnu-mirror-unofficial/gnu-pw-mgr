@@ -191,59 +191,64 @@ to have a common login to some web sites.  To accommodate this and
 to not reveal to your partners how to login to the rest of your world,
 a new option has been added:  @code{--secondary}.
 
-This marks the associated @code{--tag} and @code{--text} options as
-being ``secondary'' -- i.e. not being listed last.  To remind yourself
-that you need to use this secondary password, you need to put a reminder
-into the @code{--login-id} option for the usual domain transform.
+This option constrains seeds specified with @code{--tag} and @code{--text}
+to be used only with password id's that have been marked with the option.
+You are expected to transform a domain name into a password id using a
+method you would share with your partner.  Not your personal transformation.
+To remind yourself that you need to use this secondary password, you should
+put a reminder into the @code{--login-id} option for the usual domain
+transform.
 
 @strong{FOR EXAMPLE}:
 
 Assume you wish to share your @file{nytimes.com} login.  Let's say
-your id transformation is to apply ``hi %s -- it is me'' to your
-domain names, yielding ``hi amazon.com -- it is me'' for your normal
+your id transformation is to apply ``private %s'' to your
+domain names, yielding ``private amazon.com for your normal
 Amazon login.  But you do not want to reveal that to your partner.
-Instead, you want to use, ``it is us, %s'' yielding a password id
-of ``it is us, nytimes.com''.  More likely than not, you will forget.
+Instead, you want to use, ``shared %s'' yielding a password id
+of ``shared nytimes.com''.  More likely than not, you will forget.
 Therefore, do the following:
 
 @example
+gnu-pw-mgr --tag first --text \
+    'She sells sea shells [...] sea shore.'
 gnu-pw-mgr --tag xxx --secondary --text \
-    'peter piper picked a peck of pickled peppers\
- Peter piper is in a pickle rut.'\
+    'Peter Piper picked a peck [...] is in a pickle rut.'\
 
-gnu-pw-mgr --log 'use xxx tag' it is us, nytimes.com
-gnu-pw-mgr --log "it is us" hi nytimes.com -- it is me
+gnu-pw-mgr --log 'shared login' --secondary shared nytimes.com
+gnu-pw-mgr --log "private vs. shared" private nytimes.com
 @end example
 
-now when you try the standard transform of @file{nytimes.com}, you
-get the reminder, ``it is us'' and the correct login id will remind
-you to use the password tagged, ``xxx''.  e.g.:
+now when you try the standard transform of @file{nytimes.com}, you get the
+reminder, ``private vs. shared''.  e.g.:
 
 @example
-$ gnu-pw-mgr hi nytimes.com -- it is me
+$ gnu-pw-mgr --status private nytimes.com
+password id 'private nytimes.com':
+  login-id   private vs. shared
+$ gnu-pw-mgr --status shared nytimes.com
+password id 'shared nytimes.com' (secondary password):
+  login-id   shared login
+$ gnu-pw-mgr  private nytimes.com
+seed-tag     login id hint: private vs. shared   pw:
+first        vpEzyiue8oZwb00v
 
-seed-tag     login id hint: it is us   pw:
-xxx          HeTuldhc31wdEG6i
-first        SKxFwX0v+SSr4w2E
-~
-$ gnu-pw-mgr it is us, nytimes.com
-
-seed-tag     login id hint: use xxx tag   pw:
-xxx          pbQ2BW0YXh2n461o
-first        XKX/gOPUgIcL3BoY
-~
+$ gnu-pw-mgr shared nytimes.com
+seed-tag     login id hint: shared login   pw:
+xxx          7VB1er/hzJOlydM1
 $ cat ~/.local/gnupwmgr.cfg 
 
 <seed>
-  <tag>xxx</tag><ver type=integer>1054722</ver>
-  <text>peter Piper [...] in a pickle rut.</text>
+  <tag>xxx</tag><ver type=integer>1054726</ver><secondary/>
+  <text>Peter Piper picked a peck [...] is in a pickle rut.</text>
 </seed>
 
 <seed>
-  <tag>first</tag><ver type=integer>1054722</ver>
-  <text>the quick brown fox [...] dogs!!!</text>
+  <tag>first</tag><ver type=integer>1054726</ver>
+  <text>She sells sea shells [...] sea shore.</text>
 </seed>
 <program per_pw_id>
-<pwtag id="b3zcBQvr3UPX+x4n/88DAgbv">login-id  = 'use xxx tag'</pwtag>
-<pwtag id="hEhyf07YdXM3pTOF3F1nQpJx">login-id  = 'it is us'</pwtag>
+<pwtag id="xWUK3VyV97WZtPfue3faPn+p">login-id  = 'shared login'</pwtag>
+<pwtag id="xWUK3VyV97WZtPfue3faPn+p">secondary</pwtag>
+<pwtag id="p5K9iSZelZktTbhqKNw36tJL">login-id  = 'private vs. shared'</pwtag>
 @end example
