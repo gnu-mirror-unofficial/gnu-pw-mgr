@@ -58,11 +58,17 @@ static void
 set_pwid_opts(char const * name)
 {
     char const * cfg_text = load_config_file();
-    char const * scan     = strstr(cfg_text, pw_id_tag);
+
+    /* Find the marker that separates the seeds from the
+     * password id options
+     */
+    char const * scan = strstr(cfg_text, pw_id_tag);
 
     if (scan != NULL) {
         size_t mark_len;
         char * mark = make_pwid_mark(name, &mark_len);
+
+        scan += pw_id_tag_LEN;
 
         for (;;) {
             char * end;
@@ -127,6 +133,48 @@ remove_opt(char const * txt, char const * mark, size_t m_len,
     }
 }
 
+static bool
+removed_old_opts(char const * cfg_text, char const * name, char ** mark_p)
+{
+    bool res = false;
+    size_t mark_len;
+
+    char * mark = *mark_p = make_pwid_mark(name, &mark_len);
+
+    if (STATE_OPT(LOGIN_ID) == OPTST_DEFINED) {
+        res = true;
+        remove_opt(cfg_text, mark, mark_len, SET_CMD_LOGIN_ID);
+    }
+
+    if (STATE_OPT(LENGTH) == OPTST_DEFINED) {
+        res = true;
+        remove_opt(cfg_text, mark, mark_len, SET_CMD_LENGTH);
+    }
+
+    if (STATE_OPT(CCLASS) == OPTST_DEFINED) {
+        res = true;
+        remove_opt(cfg_text, mark, mark_len, SET_CMD_CCLASS);
+    }
+
+    if (STATE_OPT(PBKDF2) == OPTST_DEFINED) {
+        res = true;
+        remove_opt(cfg_text, mark, mark_len, SET_CMD_NO_PBKDF2);
+        remove_opt(cfg_text, mark, mark_len, SET_CMD_USE_PBKDF2);
+    }
+
+    if (STATE_OPT(SPECIALS) == OPTST_DEFINED) {
+        res = true;
+        remove_opt(cfg_text, mark, mark_len, SET_CMD_SPECIALS);
+    }
+
+    if (STATE_OPT(SECONDARY) == OPTST_DEFINED) {
+        res = true;
+        remove_opt(cfg_text, mark, mark_len, SET_CMD_SECONDARY);
+    }
+
+    return res;
+}
+
 /**
  * Update password specific options.  The password-options must be
  * checked for being "defined" (set on the command line).  If they
@@ -140,7 +188,6 @@ update_pwid_opts(char const * name)
     char const * cfg_text = load_config_file();
     char const * scan     = strstr(cfg_text, pw_id_tag);
     char * mark = NULL;
-    bool   do_update      = false;
 
     if (scan == NULL) {
         size_t len = strlen(cfg_text);
@@ -157,38 +204,13 @@ update_pwid_opts(char const * name)
         *emk     = NUL;
     }
 
+    if (! removed_old_opts(cfg_text, name, &mark))
+        return;
+
+    /*
+     * We have new info to stash.  Any old values in "cfg_text"
+     */
     {
-        size_t mark_len;
-        mark = make_pwid_mark(name, &mark_len);
-
-        if (STATE_OPT(LOGIN_ID) == OPTST_DEFINED) {
-            do_update = true;
-            remove_opt(cfg_text, mark, mark_len, SET_CMD_LOGIN_ID);
-        }
-
-        if (STATE_OPT(CCLASS) == OPTST_DEFINED) {
-            do_update = true;
-            remove_opt(cfg_text, mark, mark_len, SET_CMD_CCLASS);
-        }
-
-        if (STATE_OPT(LENGTH) == OPTST_DEFINED) {
-            do_update = true;
-            remove_opt(cfg_text, mark, mark_len, SET_CMD_LENGTH);
-        }
-
-        if (STATE_OPT(SPECIALS) == OPTST_DEFINED) {
-            do_update = true;
-            remove_opt(cfg_text, mark, mark_len, SET_CMD_SPECIALS);
-        }
-
-        if (STATE_OPT(PBKDF2) == OPTST_DEFINED) {
-            do_update = true;
-            remove_opt(cfg_text, mark, mark_len, SET_CMD_NO_PBKDF2);
-            remove_opt(cfg_text, mark, mark_len, SET_CMD_USE_PBKDF2);
-        }
-    }
-
-    if (do_update) {
         char const * fnm = access_config_file();
         FILE * fp = fopen(fnm, "w");
 
@@ -199,6 +221,9 @@ update_pwid_opts(char const * name)
         if (STATE_OPT(LOGIN_ID) == OPTST_DEFINED)
             fprintf(fp, pwid_login_id_fmt, mark, OPT_ARG(LOGIN_ID));
 
+        if (STATE_OPT(LENGTH) == OPTST_DEFINED)
+            fprintf(fp, pwid_length_fmt, mark, (unsigned int)OPT_VALUE_LENGTH);
+
         if (STATE_OPT(CCLASS) == OPTST_DEFINED) {
             tOptDesc *   od   = gnu_pw_mgrOptions.pOptDesc + INDEX_OPT_CCLASS;
             char const * save = od->optArg.argString;
@@ -208,17 +233,17 @@ update_pwid_opts(char const * name)
             od->optArg.argString = save;
         }
 
-        if (STATE_OPT(LENGTH) == OPTST_DEFINED)
-            fprintf(fp, pwid_length_fmt, mark, (unsigned int)OPT_VALUE_LENGTH);
-
-        if (STATE_OPT(SPECIALS) == OPTST_DEFINED)
-            fprintf(fp, pwid_specials_fmt, mark, OPT_ARG(SPECIALS));
-
         if (STATE_OPT(PBKDF2) == OPTST_DEFINED) {
             char const * how = ENABLED_OPT(PBKDF2) ? "use" : "no";
             fprintf(fp, pwid_pbkdf2_fmt, mark, how,
                     (unsigned int)OPT_VALUE_PBKDF2);
         }
+
+        if (STATE_OPT(SPECIALS) == OPTST_DEFINED)
+            fprintf(fp, pwid_specials_fmt, mark, OPT_ARG(SPECIALS));
+
+        if (STATE_OPT(SECONDARY) == OPTST_DEFINED)
+            fprintf(fp, pwid_second_fmt, mark);
 
         fclose(fp);
     }
@@ -301,18 +326,18 @@ next_pwid_opt(char const * scan, char const * mark, size_t mark_len)
          * on the command line and overrides whatever is in the config file.
          */
         switch (find_set_opt_cmd(scan)) {
-        case SET_CMD_CCLASS:
-            break; // always process this option
+        case SET_CMD_LOGIN_ID:
+            if (STATE_OPT(LOGIN_ID) == OPTST_DEFINED)
+                continue;
+            break;
 
         case SET_CMD_LENGTH:
             if (STATE_OPT(LENGTH) == OPTST_DEFINED)
                 continue;
             break;
 
-        case SET_CMD_LOGIN_ID:
-            if (STATE_OPT(LOGIN_ID) == OPTST_DEFINED)
-                continue;
-            break;
+        case SET_CMD_CCLASS:
+            break; // always process this option
 
         case SET_CMD_NO_PBKDF2:
         case SET_CMD_USE_PBKDF2:
@@ -322,6 +347,12 @@ next_pwid_opt(char const * scan, char const * mark, size_t mark_len)
 
         case SET_CMD_SPECIALS:
             if (STATE_OPT(SPECIALS) == OPTST_DEFINED)
+                continue;
+            break;
+
+        case SET_CMD_SECONDARY:
+        case SET_CMD_NO_SECONDARY:
+            if (STATE_OPT(SECONDARY) == OPTST_DEFINED)
                 continue;
             break;
 

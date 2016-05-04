@@ -245,6 +245,74 @@ select_chars(unsigned char * txtbuf)
     strcpy((char *)txtbuf, buf);
 }
 
+static bool
+print_one_pwid(tOptionValue const * seed_opt, char const * name)
+{
+    if (seed_opt->valType != OPARG_TYPE_HIERARCHY)
+        die(GNU_PW_MGR_EXIT_BAD_SEED, bad_seed);
+
+    /*
+     * Ensure that we have a reasonably current seed.
+     * If not, we ignore the seed.
+     */
+    {
+        tOptionValue const * ver = optionGetValue(seed_opt, s_ver_z);
+
+        if ((ver == NULL) || (ver->valType != OPARG_TYPE_NUMERIC)) {
+            tOptionValue const * tag = optionGetValue(seed_opt, tag_z);
+            warning_msg(too_old_z, tag->v.strVal);
+            return false;
+        }
+    }
+
+    /*
+     *  make sure that the password id setting for "secondary"
+     *  matches that of our seed.
+     */
+    {
+        tOptionValue const * sec = optionGetValue(seed_opt, sec_pw_id);
+
+        if ((sec == NULL) != (! HAVE_OPT(SECONDARY)))
+            return false;
+    }
+
+    /*
+     * The gauntlett has been run.  Now print the password.
+     */
+    tOptionValue const * tag = optionGetValue(seed_opt, tag_z);
+    tOptionValue const * txt = optionGetValue(seed_opt, text_z);
+
+    if (  (tag->valType != OPARG_TYPE_STRING)
+       || (tag->valType != OPARG_TYPE_STRING))
+        die(GNU_PW_MGR_EXIT_BAD_SEED, bad_seed);
+
+    /*
+     * Use the PBKDF function if it is requested or if the result
+     * length exceeds what we can provide with 256 bits of hash
+     * (40 bytes).
+     */
+    /*
+     * The "txtbuf" is much larger than needed.  It gets trimmed.
+     * This way, base64encode can encode all the data,
+     */
+    size_t buf_len = (OPT_VALUE_LENGTH > (MIN_BUF_LEN - 8))
+        ? OPT_VALUE_LENGTH + 16 : MIN_BUF_LEN;
+    unsigned char * txtbuf = scribble_get(buf_len);
+
+    if (ENABLED_OPT(PBKDF2) || (OPT_VALUE_LENGTH > (MIN_BUF_LEN - 8)))
+        get_pbkdf2_pw((char *)txtbuf, buf_len,
+                      tag->v.strVal, txt->v.strVal, name);
+    else
+        get_dft_pw((char *)txtbuf, buf_len,
+                   tag->v.strVal, txt->v.strVal, name);
+
+    if (HAVE_OPT(SELECT_CHARS))
+        select_chars(txtbuf);
+
+    printf(pw_fmt, tag->v.strVal, txtbuf);
+    return true;
+}
+
 /**
  * Print the passwords for \a name.
  * @param name  the name/id for which a password is needed
@@ -252,10 +320,9 @@ select_chars(unsigned char * txtbuf)
 static void
 print_pwid(char const * name)
 {
-    size_t          buf_len = MIN_BUF_LEN;
-    unsigned char * txtbuf;
     char const *    pfx    = "";
     tOptionValue const * ov = optionFindValue(&DESC(SEED), NULL, NULL);
+    bool printed_pw = false;
 
     set_pwid_opts(name);
     if (HAVE_OPT(STATUS)) {
@@ -269,15 +336,6 @@ print_pwid(char const * name)
     }
 
     scribble_free();
-
-    if (OPT_VALUE_LENGTH > (MIN_BUF_LEN - 8)) // > 40
-        buf_len = OPT_VALUE_LENGTH + 16;
-
-    /*
-     * The "txtbuf" is much larger than needed.  It gets trimmed.
-     * This way, base64encode can encode all the data,
-     */
-    txtbuf = scribble_get(buf_len);
 
     if (! HAVE_OPT(LOGIN_ID)) {
         if (! HAVE_OPT(NO_HEADER))
@@ -298,43 +356,13 @@ print_pwid(char const * name)
      * For each <seed> value in the config file, print a password.
      */
     do  {
-        tOptionValue const * tag, * txt, * s_ver;
+        printed_pw |= print_one_pwid(ov, name);
+        ov = optionFindNextValue(&DESC(SEED), ov, NULL, NULL);
+    } while (ov != NULL);
 
-        if (ov->valType != OPARG_TYPE_HIERARCHY)
-            die(GNU_PW_MGR_EXIT_BAD_SEED, bad_seed);
-
-        tag   = optionGetValue(ov, tag_z);
-        txt   = optionGetValue(ov, text_z);
-        s_ver = optionGetValue(ov, s_ver_z);
-
-        if (  (tag->valType != OPARG_TYPE_STRING)
-           || (tag->valType != OPARG_TYPE_STRING))
-            die(GNU_PW_MGR_EXIT_BAD_SEED, bad_seed);
-
-        if ((s_ver == NULL) || (s_ver->valType != OPARG_TYPE_NUMERIC)) {
-            warning_msg(too_old_z, tag);
-            continue;
-        }
-
-        /*
-         * Use the PBKDF function if it is requested or if the result
-         * length exceeds what we can provide with 256 bits of hash
-         * (40 bytes).
-         */
-        if (ENABLED_OPT(PBKDF2) || (OPT_VALUE_LENGTH > (MIN_BUF_LEN - 8)))
-            get_pbkdf2_pw((char *)txtbuf, buf_len,
-                          tag->v.strVal, txt->v.strVal, name);
-        else
-            get_dft_pw((char *)txtbuf, buf_len,
-                       tag->v.strVal, txt->v.strVal, name);
-
-        if (HAVE_OPT(SELECT_CHARS))
-            select_chars(txtbuf);
-
-        printf(pw_fmt, tag->v.strVal, txtbuf);
-
-    } while (ov = optionFindNextValue(&DESC(SEED), ov, NULL, NULL),
-             ov != NULL);
+    if (! printed_pw)
+        die(GNU_PW_MGR_EXIT_NO_SEED, no_passwords,
+            ENABLED_OPT(SECONDARY) ? sec_pw_type : "");
 
     update_pwid_opts(name);
 }
@@ -468,10 +496,12 @@ main(int argc, char ** argv)
         die(GNU_PW_MGR_EXIT_INVALID, had_load_opts);
 
     /*
-     * There are three operational modes: add a new seed, remove an old seed
-     * and print a password.  If we have any operands, we must be printing a
-     * password.  We must have found a seed option in the config file and
-     * we cannot have a --text or --tag option specified.
+     * There are four operational modes:
+     *
+     * 1) command line operands signify printing a password, otherwise
+     * 2) not having a --tag option says to read a password id from stdin, else
+     * 3) not having --text option says to remove a seed, else
+     * 4) add a new password seed using --tag and --text
      */
     if (argc > 0) {
         char const * arg;
@@ -490,17 +520,18 @@ main(int argc, char ** argv)
         print_pwid(arg);
 
     } else if (! HAVE_OPT(TAG)) {
-        /*
-         * libopts has ensured that we do not have --text, so we must
-         * be reading in a password id from standard input
-         */
         stdin_pwid();
 
-    } else if (HAVE_OPT(TEXT))
+    } else if (HAVE_OPT(TEXT)) {
+        if (HAVE_OPT(SECONDARY) && ! ENABLED_OPT(SECONDARY))
+            usage_message(disable_second);
         add_seed();
 
-    else
+    } else {
+        if (HAVE_OPT(SECONDARY))
+            usage_message(secondary_removal);
         rm_seed();
+    }
 
     secure_cfg_file();
 

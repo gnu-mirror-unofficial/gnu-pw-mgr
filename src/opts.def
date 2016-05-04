@@ -194,17 +194,18 @@ flag            = {
 
 flag            = {
     name        = secondary;
-    flags-must  = text, seed;
+    disable     = no;
     descrip     = 'secondary tag';
-    flags-cant  = login-id, cclass, length, specials, no-header, pbkdf2;
     no-preset;
 
     doc = <<- _EOF_
-	This option places the new seed as the oldest seed in the configuration.
-	This is useful if you must to share a login with someone and you do
-	not wish to reveal the details of your remaining login credentials.
-	Unfortunately, some web sites make this necessary for some family
-	accounts.  See the documentation.
+	If this option is used on conjunction with the @code{text} option,
+	that seed is marked as a secondary password seed.
+	If used in conjunction with a password id,
+	then the password id will be associated with secondary seeds.
+	When passwords are printed, if the password id is marked with
+	this option, only secondary seeds will be used.
+	When not so marked, only "regular" (non-secondary) seeds will be used.
 	_EOF_;
 };
 
@@ -215,7 +216,8 @@ flag            = {
  *
  * 1. fill in and document the option here
  * 2. Add a new pwid_*_fmt string for adding it to the config file
- * 3. deal with it in update_pwid_opts() and next_pwid_opt() in pw-opts.c
+ * 3. deal with it in removed_old_opts, update_pwid_opts and next_pwid_opt
+ *    in pw-opts.c.  "bootstrap.conf" will verify it.
  * 4. write the code to actually do something about this option.
  */
 
@@ -223,8 +225,8 @@ flag = { name = password-options;
     descrip = 'Options for specifying password attributes.';
 
     documentation = <<- _EODoc_
-	The @code{--cclass}, @code{--length}, @code{--tag} and
-	@code{--specials} options are stored in the configuration file.
+	The @code{--cclass}, @code{--length}, @code{--tag}, @code{--secondary}
+	and @code{--specials} options are stored in the configuration file.
 	They are associated with a password ID via the sha check sum
 	of the id.  They will be recalled the next time that id is used.
 	_EODoc_;
@@ -422,22 +424,6 @@ flag            = {
 	_EOF_;
 };
 
-flag            = {
-    name        = select-chars;
-    arg-type    = string;
-    descrip     = 'select only certain bytes of a password';
-
-    doc = <<- _EOF_
-	There exists at least one web site that asks you to enter just some
-	of the password characters, like the second, tenth and sixteenth.
-	With long, memorable resistant passwords, this can be difficult to
-	do.  For such web sites, provide this option with the string
-	"2,10,16" as the option argument.  The characters to select are
-	space or comma separated values.  The result cannot be longer than
-	the original password.
-	_EOF_;
-};
-
 /*
  # * * * * * * * * * * * * * * * * * * * *
  */
@@ -456,6 +442,26 @@ flag            = {
 	Suppressing it is intended for automated logins.
 	The login name hint will not be provided, but the
 	@code{tag} is printed.
+	_EOF_;
+};
+
+flag            = {
+    name        = select-chars;
+    arg-type    = string;
+    no-preset;
+    descrip     = 'select only certain bytes of a password';
+
+    doc = <<- _EOF_
+	There exists at least one web site that asks you to enter just some
+	of the password characters, like the second, tenth and sixteenth.
+	With long, memorable resistant passwords, this can be difficult to
+	do.  For such web sites, provide this option with the string
+	"2,10,16" as the option argument.  The characters to select are
+	space or comma separated values.  The result cannot be longer than
+	the original password.
+
+	Disabling this option conflicts with adding new password seeds.
+	Using this option at all conflicts with removing password seeds.
 	_EOF_;
 };
 
