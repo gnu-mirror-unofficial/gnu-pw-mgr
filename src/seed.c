@@ -143,6 +143,27 @@ ver_str_to_number(void)
     return res;
 }
 
+static inline void
+print_new_seed(FILE * fp, char const * cfg_text)
+{
+    uint32_t     seed_ver = ver_str_to_number();
+    char const * seed_txt = get_seed_text();
+
+    if (HAVE_OPT(SECONDARY)) {
+        fprintf(fp, cfg_fmt, OPT_ARG(TAG), seed_ver, sec_mark, seed_txt);
+        fputs(cfg_text, fp);
+
+    } else {
+        char const * rest_of_text = strstr(cfg_text, pw_id_tag);
+        fprintf(fp, cfg_fmt, OPT_ARG(TAG), seed_ver, "", seed_txt);
+
+        if (rest_of_text != NULL)
+            fwrite(cfg_text, rest_of_text - cfg_text, 1, fp);
+        else
+            fputs(cfg_text, fp);
+    }
+}
+
 /**
  * add a new seed to the config file.
  * Both the --tag and --text options were provided.
@@ -151,7 +172,7 @@ static void
 add_seed(void)
 {
     char const * cfg_text = load_config_file();
-    uint32_t seed_ver = ver_str_to_number();
+    FILE * fp;
 
     {
         char * tag = scribble_get(sizeof (tag_fmt) + strlen(OPT_ARG(TAG)));
@@ -162,35 +183,14 @@ add_seed(void)
 
     {
         char const * cfg_file = access_config_file();
-        FILE * fp = fopen(cfg_file, "w");
-        char const * p;
-        size_t wlen;
-        char const * seed_txt;
-
+        fp = fopen(cfg_file, "w");
         if (fp == NULL)
             fserr(GNU_PW_MGR_EXIT_NO_CONFIG, fopen_z, cfg_file);
-
-        if (HAVE_OPT(SECONDARY)) {
-            p = cfg_text;
-
-        } else {
-            p = strstr(cfg_text, pw_id_tag);
-            if (p != NULL)
-                wlen = p - cfg_text;
-            else
-                wlen = strlen(cfg_text);
-
-            if (wlen > 0)
-                fwrite(cfg_text, wlen, 1, fp);
-        }
-
-        seed_txt = get_seed_text();
-
-        fprintf(fp, cfg_fmt, OPT_ARG(TAG), seed_ver, seed_txt);
-        if (p != NULL)
-            fputs(p, fp);
-        fclose(fp);
     }
+
+    print_new_seed(fp, cfg_text);
+
+    fclose(fp);
 }
 
 /**

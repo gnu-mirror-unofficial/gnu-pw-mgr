@@ -2,7 +2,7 @@ AutoGen Definitions strings;
 
 /*
  *  This file is part of gnu-pw-mgr.
- *  Copyright (C) 2013-2015 Bruce Korb, all rights reserved.
+ *  Copyright (C) 2013-2016 Bruce Korb, all rights reserved.
  *  This is free software. It is licensed for use, modification and
  *  redistribution under the terms of the GNU General Public License,
  *  version 3 or later <http://gnu.org/licenses/gpl.html>
@@ -30,7 +30,7 @@ string = { nm  = cclass_conflict;
            str = "'--cclass=no-alpha' conflicts with alpha, upper "
                  "and lower values\n"; };
 string = { nm  = cfg_fmt;
-           str = "\n<seed>\n  <tag>%s</tag><ver type=integer>%u</ver>\n"
+           str = "\n<seed>\n  <tag>%s</tag><ver type=integer>%u</ver>%s\n"
                 "  <text>%s</text>\n</seed>\n"; };
 string = { nm  = text_has_mark_fmt;
            str = "The seed text cannot contain </text>:\n\t%s\n"; };
@@ -95,6 +95,7 @@ string = { nm = pwid_login_id_fmt;  str = "%slogin-id  = '%s'</pwtag>\n"; };
 string = { nm = pwid_specials_fmt;  str = "%sspecials  = '%s'</pwtag>\n"; };
 string = { nm = pwid_pbkdf2_fmt;    str = "%s%s-pbkdf2 = %u</pwtag>\n"; };
 string = { nm = pwtag_z;         str = "<pwtag id="; };
+string = { nm = sec_mark;        str = "<secondary/>"; };
 string = { nm = seed_mark;       str = "\n\n<seed>\n"; };
 string = { nm = stdin_out_z;     str = "stdin/out"; };
 string = { nm = tag_fmt;         str = "<tag>%s</tag>"; };
