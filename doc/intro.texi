@@ -250,7 +250,7 @@ $ cat ~/.local/gnupwmgr.cfg
   <text>She sells sea shells [...] sea shore.</text>
 </seed>
 <program per_pw_id>
-<pwtag id="xWUK3VyV97WZtPfue3faPn+p">login-id  = 'multi-user'</pwtag>
-<pwtag id="xWUK3VyV97WZtPfue3faPn+p">secondary</pwtag>
-<pwtag id="p5K9iSZelZktTbhqKNw36tJL">login-id  = 'private vs. shared'</pwtag>
+<pwtag id="xWUK3...Pn+p">login-id  = 'multi-user'</pwtag>
+<pwtag id="xWUK3...Pn+p">secondary</pwtag>
+<pwtag id="p5K9i...6tJL">login-id  = 'private vs. shared'</pwtag>
 @end example
