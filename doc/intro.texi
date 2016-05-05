@@ -189,22 +189,24 @@ With a different password id or seed, you would get a different answer.
 Sometimes in a household or with a partnership it becomes necessary
 to have a common login to some web sites.  To accommodate this and
 to not reveal to your partners how to login to the rest of your world,
-a new option has been added:  @code{--secondary}.
+a new option has been added:  @code{--secondary}.  Password seeds will
+be marked as either being ``secondary'' or not and login ids will
+also be so marked.  The emitted passwords for any login id will only
+be for those password seeds that match the secondary/not-secondary
+setting.
 
-This option constrains seeds specified with @code{--tag} and @code{--text}
-to be used only with password id's that have been marked with the option.
 You are expected to transform a domain name into a password id using a
-method you would share with your partner.  Not your personal transformation.
-To remind yourself that you need to use this secondary password, you should
-put a reminder into the @code{--login-id} option for the usual domain
-transform.
+method you would share with your partner and not use your personal
+transformation.  To remind yourself that you need to use this alternate
+password id, you should put a reminder into the @code{--login-id} option for
+the usual domain transform.
 
 @strong{FOR EXAMPLE}:
 
 Assume you wish to share your @file{nytimes.com} login.  Let's say
 your id transformation is to apply ``private %s'' to your
-domain names, yielding ``private amazon.com for your normal
-Amazon login.  But you do not want to reveal that to your partner.
+domain names, yielding ``private amazon.com'' for your normal
+Amazon login.  You should not reveal that to your partner.
 Instead, you want to use, ``shared %s'' yielding a password id
 of ``shared nytimes.com''.  More likely than not, you will forget.
 Therefore, do the following:
@@ -213,9 +215,9 @@ Therefore, do the following:
 gnu-pw-mgr --tag first --text \
     'She sells sea shells [...] sea shore.'
 gnu-pw-mgr --tag xxx --secondary --text \
-    'Peter Piper picked a peck [...] is in a pickle rut.'\
+    'Peter Piper picked [...] did Peter Piper pick?'\
 
-gnu-pw-mgr --log 'shared login' --secondary shared nytimes.com
+gnu-pw-mgr --log 'multi-user' --secondary shared nytimes.com
 gnu-pw-mgr --log "private vs. shared" private nytimes.com
 @end example
 
@@ -228,19 +230,19 @@ password id 'private nytimes.com':
   login-id   private vs. shared
 $ gnu-pw-mgr --status shared nytimes.com
 password id 'shared nytimes.com' (secondary password):
-  login-id   shared login
+  login-id   multi-user
 $ gnu-pw-mgr  private nytimes.com
 seed-tag     login id hint: private vs. shared   pw:
 first        vpEzyiue8oZwb00v
 
 $ gnu-pw-mgr shared nytimes.com
-seed-tag     login id hint: shared login   pw:
+seed-tag     login id hint: multi-user   pw:
 xxx          7VB1er/hzJOlydM1
 $ cat ~/.local/gnupwmgr.cfg 
 
 <seed>
   <tag>xxx</tag><ver type=integer>1054726</ver><secondary/>
-  <text>Peter Piper picked a peck [...] is in a pickle rut.</text>
+  <text>Peter Piper picked [...] did Peter Piper pick?</text>
 </seed>
 
 <seed>
@@ -248,7 +250,7 @@ $ cat ~/.local/gnupwmgr.cfg
   <text>She sells sea shells [...] sea shore.</text>
 </seed>
 <program per_pw_id>
-<pwtag id="xWUK3VyV97WZtPfue3faPn+p">login-id  = 'shared login'</pwtag>
+<pwtag id="xWUK3VyV97WZtPfue3faPn+p">login-id  = 'multi-user'</pwtag>
 <pwtag id="xWUK3VyV97WZtPfue3faPn+p">secondary</pwtag>
 <pwtag id="p5K9iSZelZktTbhqKNw36tJL">login-id  = 'private vs. shared'</pwtag>
 @end example

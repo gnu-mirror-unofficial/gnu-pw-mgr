@@ -3,13 +3,14 @@ New in 2.0 - May, 2016
 * A new option --secondary to implement "secondary" password ids.
   This allows shared logins with secure passwords and still
   keeps all the other passwords very secret.  See the docs for
-  the rationale.
+  the rationale and usage.
 
 New in 1.6 - October, 2015
 
 * A fix for security questions.  They are too hard to remember,
   consistent from web site to web site.  A "--confirm" option
-  has been added to provide secure answers to these questions.
+  has been added to provide secure, site unique answers to
+  these questions.
 
 New in 1.5 - August, 2015
 

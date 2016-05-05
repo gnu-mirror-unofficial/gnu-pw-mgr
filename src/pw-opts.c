@@ -242,7 +242,7 @@ update_pwid_opts(char const * name)
         if (STATE_OPT(SPECIALS) == OPTST_DEFINED)
             fprintf(fp, pwid_specials_fmt, mark, OPT_ARG(SPECIALS));
 
-        if (STATE_OPT(SECONDARY) == OPTST_DEFINED)
+        if (ENABLED_OPT(SECONDARY))
             fprintf(fp, pwid_second_fmt, mark);
 
         fclose(fp);
@@ -351,7 +351,6 @@ next_pwid_opt(char const * scan, char const * mark, size_t mark_len)
             break;
 
         case SET_CMD_SECONDARY:
-        case SET_CMD_NO_SECONDARY:
             if (STATE_OPT(SECONDARY) == OPTST_DEFINED)
                 continue;
             break;
