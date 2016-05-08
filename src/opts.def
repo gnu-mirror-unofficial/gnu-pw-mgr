@@ -204,9 +204,8 @@ flag            = {
 	are only printed for password ids that have been marked as secondary.
 	When used in conjunction with a password id,
 	then the password id will be marked as a secondary.
-	Passwords are printed for secondary password ids using only the seeds
-	marked as secondary and unmarked password ids will only have passwords
-	generated for unmarked seeds.
+	Unmarked password ids will cause passwords to be printed that have
+	been derived from unmarked seeds.
 	_EOF_;
 };
 
