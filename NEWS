@@ -1,6 +1,6 @@
 New in 2.0 - May, 2016
 
-* A new option --secondary to implement "secondary" password ids.
+* A new option --shared to implement sharing passwords.
   This allows shared logins with secure passwords and still
   keeps all the other passwords very secret.  See the docs for
   the rationale and usage.
