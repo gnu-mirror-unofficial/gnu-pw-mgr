@@ -211,8 +211,8 @@ flag            = {
 	are only printed for password ids that have been marked as shared.
 	When used in conjunction with a password id,
 	then the password id will be marked as a shared.
-	Unmarked password ids will cause passwords to be printed that have
-	been derived from unmarked seeds.
+	Passwords will only be printed for seeds and ids that have matching
+	``shared'' settings.
 	_EOF_;
 };
 
@@ -234,7 +234,7 @@ flag = { name = password-options;
     documentation = <<- _EODoc_
 	The @code{--cclass}, @code{--length}, @code{--tag}, @code{--shared}
 	and @code{--specials} options are stored in the configuration file.
-	They are associated with a password ID via the sha check sum
+	They are associated with a password ID via a clipped sha check sum
 	of the id.  They will be recalled the next time that id is used.
 	_EODoc_;
 };
@@ -277,10 +277,11 @@ flag            = {
 
 	Password lengths of 4 through 7 characters are limited to "pin" numbers.
 	"pin" numbers are 4 or more digits.  All other passwords must be at
-	least 8 characters long.  The default length is 16.
+	least 8 characters long.  The default length is 16.  Use at least 24,
+	if you can.
 
 	Password lengths beyond 40 characters force the use of the pbkdf2
-	algorithm.  i.e.  @samp{--no-pbkdf2} is ignored.
+	algorithm.  i.e.  @code{--no-pbkdf2} is ignored.
 	This limit is derived from "MIN_BUF_LEN - 8".
 	_EOF_;
 };
@@ -359,7 +360,7 @@ flag = {
 	Two of a particular character class are required.
 	Specifying this implies "at least one of" the specified type.
 	Two upper case, lower case, punctuation (special) and digit
-	characters may be specified this way.
+	characters may be specified this way.  ``two-alpha'' is not supported.
 	@end table
 	_EOF_;
 
