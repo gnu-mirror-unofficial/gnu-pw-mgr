@@ -45,7 +45,8 @@ gen_man     = \
     top_srcdir="$(top_srcdir)" \
     autogen -MF$@ -b $(1) -T agman-cmd.tpl \
 	$(top_srcdir)/src/$(2) ; \
-    test -f $@
+	sed -i 's/- Fl /-/;s/ Fl /\\-/;s/I-Font\]\\-\\-/B-Font]\\-\\-/' $(1).1 ; \
+	touch $@
 
 all : $(DEP_FILES)
 

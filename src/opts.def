@@ -200,12 +200,13 @@ flag            = {
 
     doc = <<- _EOF_
 	If this option is used on conjunction with the @code{text} option,
-	that seed is marked as a secondary password seed.
-	If used in conjunction with a password id,
-	then the password id will be associated with secondary seeds.
-	When passwords are printed, if the password id is marked with
-	this option, only secondary seeds will be used.
-	When not so marked, only "regular" (non-secondary) seeds will be used.
+	that seed is marked as a secondary password seed and derived passwords
+	are only printed for password ids that have been marked as secondary.
+	When used in conjunction with a password id,
+	then the password id will be marked as a secondary.
+	Passwords are printed for secondary password ids using only the seeds
+	marked as secondary and unmarked password ids will only have passwords
+	generated for unmarked seeds.
 	_EOF_;
 };
 
@@ -570,21 +571,22 @@ exit-desc[16] = 'There is a coding error that should be reported';
 detail = <<-  _EOF_
 	The password id should contain a fairly consistent permutation of the
 	URL you are logging in to.  "Fairly" because you may wish to vary your
-	financial institutions differently than your newspaper.
-	e.g. "my/banK$moC" versus "bLog-oRg".  And then surround the id with
-	prefixes and suffixes.  Separate these with punctuation
-	characters to make dictionary attacks more difficult.
+	financial institutions differently than your newspaper, or you may
+	need multiple credentials for the same domain.  Either way, a
+	password id is formed by surrounding the domain name with unlikely
+	prefixes, suffixes and punctuations.
 
 	Only the passwords for one password id are ever printed.  If the
 	command line contains multiple operands (arguments after the options),
 	then they are assembled into one password id with space characters
 	separating the original operands.
 
-	One password is printed for every configured seed value.  Seed values
-	are added by specifying just the @code{--tag} and @code{--text}
-	options.  The tag is also printed with each password.  The
-	@code{--login-id}, @code{--length}, @code{--cclass} and
-	@code{--specials} options are associated with each password id.
+	One password is printed for every configured seed value with a
+	matching @code{--secondary} option state.  Seed values are added by
+	specifying just the @code{--tag} and @code{--text} options, with or
+	without the @code{--secondary} option.  When passwords are printed,
+	the tag is also printed in plain text.
+
 	Password ids are never stored anywhere.
 	_EOF_;
 
