@@ -167,9 +167,9 @@ removed_old_opts(char const * cfg_text, char const * name, char ** mark_p)
         remove_opt(cfg_text, mark, mark_len, SET_CMD_SPECIALS);
     }
 
-    if (STATE_OPT(SECONDARY) == OPTST_DEFINED) {
+    if (STATE_OPT(SHARED) == OPTST_DEFINED) {
         res = true;
-        remove_opt(cfg_text, mark, mark_len, SET_CMD_SECONDARY);
+        remove_opt(cfg_text, mark, mark_len, SET_CMD_SHARED);
     }
 
     return res;
@@ -242,7 +242,7 @@ update_pwid_opts(char const * name)
         if (STATE_OPT(SPECIALS) == OPTST_DEFINED)
             fprintf(fp, pwid_specials_fmt, mark, OPT_ARG(SPECIALS));
 
-        if (ENABLED_OPT(SECONDARY))
+        if (ENABLED_OPT(SHARED))
             fprintf(fp, pwid_second_fmt, mark);
 
         fclose(fp);
@@ -350,8 +350,8 @@ next_pwid_opt(char const * scan, char const * mark, size_t mark_len)
                 continue;
             break;
 
-        case SET_CMD_SECONDARY:
-            if (STATE_OPT(SECONDARY) == OPTST_DEFINED)
+        case SET_CMD_SHARED:
+            if (STATE_OPT(SHARED) == OPTST_DEFINED)
                 continue;
             break;
 

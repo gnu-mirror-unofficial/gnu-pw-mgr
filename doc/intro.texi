@@ -189,10 +189,10 @@ With a different password id or seed, you would get a different answer.
 Sometimes in a household or with a partnership it becomes necessary
 to have a common login to some web sites.  To accommodate this and
 to not reveal to your partners how to login to the rest of your world,
-a new option has been added:  @code{--secondary}.  Password seeds will
-be marked as either being ``secondary'' or not and login ids will
+a new option has been added:  @code{--shared}.  Password seeds will
+be marked as either being ``shared'' or not and login ids will
 also be so marked.  The emitted passwords for any login id will only
-be for those password seeds that match the secondary/not-secondary
+be for those password seeds that match the shared/not-shared
 setting.
 
 You are expected to transform a domain name into a password id using a
@@ -214,10 +214,10 @@ Therefore, do the following:
 @example
 gnu-pw-mgr --tag first --text \
     'She sells sea shells [...] sea shore.'
-gnu-pw-mgr --tag xxx --secondary --text \
+gnu-pw-mgr --tag xxx --shared --text \
     'Peter Piper picked [...] did Peter Piper pick?'\
 
-gnu-pw-mgr --log 'multi-user' --secondary shared nytimes.com
+gnu-pw-mgr --log 'multi-user' --shared shared nytimes.com
 gnu-pw-mgr --log "private vs. shared" private nytimes.com
 @end example
 
@@ -229,7 +229,7 @@ $ gnu-pw-mgr --status private nytimes.com
 password id 'private nytimes.com':
   login-id   private vs. shared
 $ gnu-pw-mgr --status shared nytimes.com
-password id 'shared nytimes.com' (secondary password):
+password id 'shared nytimes.com' (shared password):
   login-id   multi-user
 $ gnu-pw-mgr  private nytimes.com
 seed-tag     login id hint: private vs. shared   pw:
@@ -241,7 +241,7 @@ xxx          7VB1er/hzJOlydM1
 $ cat ~/.local/gnupwmgr.cfg 
 
 <seed>
-  <tag>xxx</tag><ver type=integer>1054726</ver><secondary/>
+  <tag>xxx</tag><ver type=integer>1054726</ver><shared/>
   <text>Peter Piper picked [...] did Peter Piper pick?</text>
 </seed>
 
@@ -251,6 +251,6 @@ $ cat ~/.local/gnupwmgr.cfg
 </seed>
 <program per_pw_id>
 <pwtag id="xWUK3...Pn+p">login-id  = 'multi-user'</pwtag>
-<pwtag id="xWUK3...Pn+p">secondary</pwtag>
+<pwtag id="xWUK3...Pn+p">shared</pwtag>
 <pwtag id="p5K9i...6tJL">login-id  = 'private vs. shared'</pwtag>
 @end example

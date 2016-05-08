@@ -109,7 +109,7 @@ flag            = {
 	It is also the only option that is directly processed from
 	the config file.
 
-	The seed value consists of three named parts (sub-options):
+	The seed values consist of four named parts (sub-options):
 	@table @samp
 	@item tag
 	These are displayed next to each displayed password to help identify them.
@@ -125,17 +125,24 @@ flag            = {
 	character class restrictions may cause a change in the algorithm
 	used to tweak passwords.  When this is done, the old algorithm
 	is still used to tweak passwords from the older seeds.
+	@item shared
+	The presence of this sub-option specifies that the seed is only to be
+	used with password ids that are also marked as @code{--shared}.
+	Without this sub-option, the seed is only used with password ids that
+	are @emph{not} marked as @code{--shared}.
 	@end table
 
 	It is expected that when you must create a new password for an
-	existing site, you will add a seed to your config file.  Specify only
-	the @code{--tag} and @code{--text} command line options and the
-	program will insert the new triplet into the configuration file.
-	Specify only the tag and no other command line arguments, and the
-	associated seed entry will be removed.  After that, every password id
-	will have a new "most recent" password associated with it.  You are
-	expected to gradually update all of your passwords and retire seed
-	values no longer in use.
+	existing site, you will either add a seed to your config file or
+	change the value of @code{--use-pbkdf2}.  It defaults to 10007.
+
+	Specify only the @code{--tag} and @code{--text} (and maybe
+	@code{--shared}) command line options and the program will insert the
+	new value into the configuration file.  Specify only the tag and no
+	other command line arguments, and the associated seed entry will be
+	removed.  After that, every password id will have a new "most recent"
+	password associated with it.  You are expected to gradually update all
+	of your passwords and retire seed values no longer in use.
 
 	New sites will not need a new seed.  Simply supplying the new
 	@code{<pw-id>} command argument will yield a new password.
@@ -193,17 +200,17 @@ flag            = {
 };
 
 flag            = {
-    name        = secondary;
+    name        = shared;
     disable     = no;
-    descrip     = 'secondary tag';
+    descrip     = 'shared tag';
     no-preset;
 
     doc = <<- _EOF_
 	If this option is used on conjunction with the @code{text} option,
-	that seed is marked as a secondary password seed and derived passwords
-	are only printed for password ids that have been marked as secondary.
+	that seed is marked as a shared password seed and derived passwords
+	are only printed for password ids that have been marked as shared.
 	When used in conjunction with a password id,
-	then the password id will be marked as a secondary.
+	then the password id will be marked as a shared.
 	Unmarked password ids will cause passwords to be printed that have
 	been derived from unmarked seeds.
 	_EOF_;
@@ -225,7 +232,7 @@ flag = { name = password-options;
     descrip = 'Options for specifying password attributes.';
 
     documentation = <<- _EODoc_
-	The @code{--cclass}, @code{--length}, @code{--tag}, @code{--secondary}
+	The @code{--cclass}, @code{--length}, @code{--tag}, @code{--shared}
 	and @code{--specials} options are stored in the configuration file.
 	They are associated with a password ID via the sha check sum
 	of the id.  They will be recalled the next time that id is used.
@@ -581,9 +588,9 @@ detail = <<-  _EOF_
 	separating the original operands.
 
 	One password is printed for every configured seed value with a
-	matching @code{--secondary} option state.  Seed values are added by
+	matching @code{--shared} option state.  Seed values are added by
 	specifying just the @code{--tag} and @code{--text} options, with or
-	without the @code{--secondary} option.  When passwords are printed,
+	without the @code{--shared} option.  When passwords are printed,
 	the tag is also printed in plain text.
 
 	Password ids are never stored anywhere.

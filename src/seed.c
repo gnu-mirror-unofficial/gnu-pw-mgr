@@ -149,7 +149,7 @@ print_new_seed(FILE * fp, char const * cfg_text)
     uint32_t     seed_ver = ver_str_to_number();
     char const * seed_txt = get_seed_text();
 
-    if (HAVE_OPT(SECONDARY)) {
+    if (HAVE_OPT(SHARED)) {
         fprintf(fp, cfg_fmt, OPT_ARG(TAG), seed_ver, sec_mark, seed_txt);
         fputs(cfg_text, fp);
 

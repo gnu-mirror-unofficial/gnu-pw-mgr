@@ -150,8 +150,8 @@ static void
 print_pwid_header(char const * name)
 {
     static char const hdr_fmt[]  = "password id '%s'%s:\n";
-    static char const is_sec[]   = " (secondary password)";
-    printf(hdr_fmt, name, ENABLED_OPT(SECONDARY) ? is_sec : "");
+    static char const is_sec[]   = " (shared password)";
+    printf(hdr_fmt, name, ENABLED_OPT(SHARED) ? is_sec : "");
 }
 
 /**
@@ -273,13 +273,13 @@ print_one_pwid(tOptionValue const * seed_opt, char const * name)
     }
 
     /*
-     *  make sure that the password id setting for "secondary"
+     *  make sure that the password id setting for "shared"
      *  matches that of our seed.
      */
     {
         tOptionValue const * sec = optionGetValue(seed_opt, sec_pw_id);
 
-        if ((sec == NULL) != (! HAVE_OPT(SECONDARY)))
+        if ((sec == NULL) != (! HAVE_OPT(SHARED)))
             return false;
     }
 
@@ -369,7 +369,7 @@ print_pwid(char const * name)
 
     if (! printed_pw)
         die(GNU_PW_MGR_EXIT_NO_SEED, no_passwords,
-            ENABLED_OPT(SECONDARY) ? sec_pw_type : "");
+            ENABLED_OPT(SHARED) ? sec_pw_type : "");
 
     update_pwid_opts(name);
 }
@@ -530,13 +530,13 @@ main(int argc, char ** argv)
         stdin_pwid();
 
     } else if (HAVE_OPT(TEXT)) {
-        if (HAVE_OPT(SECONDARY) && ! ENABLED_OPT(SECONDARY))
+        if (HAVE_OPT(SHARED) && ! ENABLED_OPT(SHARED))
             usage_message(disable_second);
         add_seed();
 
     } else {
-        if (HAVE_OPT(SECONDARY))
-            usage_message(secondary_removal);
+        if (HAVE_OPT(SHARED))
+            usage_message(shared_removal);
         rm_seed();
     }
 
