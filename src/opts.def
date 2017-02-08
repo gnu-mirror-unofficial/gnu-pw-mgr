@@ -12,7 +12,7 @@ version         = `tv=../.tarball-version
 
 /*
  *  This file is part of gnu-pw-mgr.
- *  Copyright (C) 2013-2016 Bruce Korb, all rights reserved.
+ *  Copyright (C) 2013-2017 Bruce Korb, all rights reserved.
  *  This is free software. It is licensed for use, modification and
  *  redistribution under the terms of the GNU General Public License,
  *  version 3 or later <http://gnu.org/licenses/gpl.html>
@@ -520,10 +520,29 @@ flag            = {
     name        = delete;
     value       = d;
     no-preset;
-    descrip     = 'Remove a password entry';
+    descrip     = 'Remove a password id entry';
     doc = <<- _EOF_
 	This will print out the attributes associated with a particular
 	password id and remove them from the configuration file.
+	_EOF_;
+};
+
+flag            = {
+    name        = domain;
+    arg-type    = string;
+    descrip     = 'a reminder of domains used for password id';
+    no-preset;
+
+    doc = <<- _EOF_
+	If you create a lot of passwords, it is easy to forget which
+	domains have an associated password.  You do @emph{not} want
+	to specify a password id, merely note the domains for which you
+	have a password id.  With well over 100 passwords, I found I
+	need to be able to know which need to be updated occasionally.
+	This option will cause a separate text database to be updated
+	with a domain name and an update date.  With a single hyphen
+	as the option argument, that database will be printed out in
+	chronological order.
 	_EOF_;
 };
 
@@ -571,6 +590,9 @@ exit-desc[9]  = 'The seed value was invalid';
 
 exit-name[10] = bad-select-chars;
 exit-desc[10] = 'the list of characters for the --select-chars option is bad';
+
+exit-name[11] = no-pwid;
+exit-desc[11] = 'no password id was specified';
 
 exit-name[16] = coding-error;
 exit-desc[16] = 'There is a coding error that should be reported';

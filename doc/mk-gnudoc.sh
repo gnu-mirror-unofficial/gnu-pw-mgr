@@ -2,7 +2,7 @@
 
 ##  This file is part of Gnu-Pw-Mgr.
 ##
-##  Gnu-Pw-Mgr Copyright (C) 1992-2016 by Bruce Korb - all rights reserved
+##  Gnu-Pw-Mgr Copyright (C) 1992-2017 by Bruce Korb - all rights reserved
 ##
 ##  Gnu-Pw-Mgr is free software: you can redistribute it and/or modify it
 ##  under the terms of the GNU General Public License as published by the
@@ -54,8 +54,7 @@ set_config_values()
     : ${srcdir=`pwd`}
     unset CDPATH
 
-    if ( : shopt -qo xtrace
-         exec 2>/dev/null 1>&2
+    if ( exec 2>/dev/null 1>&2
          shopt -qo xtrace
          exit $?
        )

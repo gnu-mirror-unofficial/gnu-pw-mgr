@@ -1,7 +1,7 @@
 /*
  *  This file is part of gpw.
  *
- *  Copyright (C) 2013-2016 Bruce Korb, all rights reserved.
+ *  Copyright (C) 2013-2017 Bruce Korb, all rights reserved.
  *  This is free software. It is licensed for use, modification and
  *  redistribution under the terms of the GNU General Public License,
  *  version 3 or later <http://gnu.org/licenses/gpl.html>
@@ -35,7 +35,8 @@ static void
 adjust_pw(char * buf, size_t bsz, unsigned char * data, size_t d_len)
 {
     char * dta = (char *)data;
-    unsigned int cclass = OPT_VALUE_CCLASS & (CCLASS_NO_ALPHA | CCLASS_NO_SPECIAL);
+    unsigned int cclass = OPT_VALUE_CCLASS
+        & (CCLASS_NO_ALPHA | CCLASS_NO_SPECIAL);
 
     // Check for PIN number password:
     //
@@ -331,6 +332,9 @@ print_pwid(char const * name)
     tOptionValue const * ov = optionFindValue(&DESC(SEED), NULL, NULL);
     bool printed_pw = false;
 
+    if (*name == '\0')
+        die(GNU_PW_MGR_EXIT_NO_PWID, no_pwid);
+
     set_pwid_opts(name);
     if (HAVE_OPT(STATUS)) {
         print_pwid_status(name);
@@ -527,7 +531,13 @@ main(int argc, char ** argv)
         print_pwid(arg);
 
     } else if (! HAVE_OPT(TAG)) {
-        stdin_pwid();
+
+        /*
+         * If the domain option was provided and we don't have a tag opt,
+         * then presume someone just wanted to fiddle domain info.
+         */
+        if (! HAVE_OPT(DOMAIN))
+            stdin_pwid();
 
     } else if (HAVE_OPT(TEXT)) {
         if (HAVE_OPT(SHARED) && ! ENABLED_OPT(SHARED))

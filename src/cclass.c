@@ -1,7 +1,7 @@
 /*
  *  This file is part of gpw.
  *
- *  Copyright (C) 2013-2016 Bruce Korb, all rights reserved.
+ *  Copyright (C) 2013-2017 Bruce Korb, all rights reserved.
  *  This is free software. It is licensed for use, modification and
  *  redistribution under the terms of the GNU General Public License,
  *  version 3 or later <http://gnu.org/licenses/gpl.html>
@@ -113,7 +113,7 @@ adjust_pin_n_alnum(tOptDesc * od)
         break;
 
     case CCLASS_ALNUM | CCLASS_PIN:
-        usage_message(cclass_conflict);
+        usage_message(alnum_pin_confl);
         /* NOTREACHED */
     }
     bits &= ~alias_mask;
