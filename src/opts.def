@@ -530,6 +530,8 @@ flag            = {
 flag            = {
     name        = domain;
     arg-type    = string;
+    arg-name    = DOMAIN;
+    max         = NOLIMIT;
     descrip     = 'a reminder of domains used for password id';
     no-preset;
 

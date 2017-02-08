@@ -488,6 +488,22 @@ stdin_pwid(void)
     /* NOTREACHED */
 }
 
+static void
+proc_dom_opts(void)
+{
+    int  ct = STACKCT_OPT(DOMAIN);
+    char const ** dom_list = STACKLST_OPT(DOMAIN) + ct - 1;
+    bool list_doms = false;
+
+    do {
+        char const * dom = *(dom_list++);
+        if ((*dom == '-') && (dom[1] == NUL)) {
+            list_doms = true;
+            continue;
+        }
+    } while (--ct > 0);
+}
+
 /**
  * Main procedure.
  * @param argc   argument count
@@ -505,6 +521,9 @@ main(int argc, char ** argv)
     }
     if (gnu_pw_mgrOptions.pOptDesc[INDEX_OPT_LOAD_OPTS].optOccCt != 1)
         die(GNU_PW_MGR_EXIT_INVALID, had_load_opts);
+
+    if (HAVE_OPT(DOMAIN))
+        proc_dom_opts();
 
     /*
      * There are four operational modes:
