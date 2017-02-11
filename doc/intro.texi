@@ -32,6 +32,7 @@ issues and describe how this program addresses them.
 * how-it-works::                How gnu-pw-mgr helps
 * security questions::          The answers to security questions
 * sharing passwords::           Sharing a password with someone
+* tracking domains::            Keeping track of too many domains
 @end menu
 
 @node Threats
@@ -254,3 +255,23 @@ $ cat ~/.local/gnupwmgr.cfg
 <pwtag id="xWUK3...Pn+p">shared</pwtag>
 <pwtag id="p5K9i...6tJL">login-id  = 'private vs. shared'</pwtag>
 @end example
+
+@node tracking domains
+@section Keeping track of too many domains
+
+I have been using this program for several years now.  I have
+discovered that it is helpful to purge old clutter that I do not want
+to keep around any more.  But I cannot because I do not know which
+entries in the configuration file are unused.  There is now a new
+command line option:
+@example
+--domain @i{domain-name}
+@end example
+Every time you use @code{--domain example.com}, a domain entry will
+be added or updated with the day count since 1970.
+
+If you choose to use this, I must emphasize very strongly:
+@bold{do not use a password id}.  The names are stored in plain
+text.  You are expected to use a transform to convert a domain
+into a password id.  That transform should only be known by you
+and not be stored anywhere (outside your own brain).
