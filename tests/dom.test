@@ -1,3 +1,4 @@
+#! /bin/sh
 
 #  This file is part of gnu-pw-mgr.
 #
@@ -16,7 +17,33 @@
 #  You should have received a copy of the GNU General Public License along
 #  with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-TESTS               = base.test dom.test
-EXTRA_DIST          = $(TESTS) test.funs
-TESTS_ENVIRONMENT   = builddir=`pwd` srcdir="$(srcdir)"
-TEST_EXTENSIONS     = .test
+readonly testname=`basename $0`
+
+set -x
+. "${srcdir}/test.funs"
+
+run_test() {
+    cd ${run_dir}
+    today=$(date +%s)
+    today=$(( today / (60 * 60 * 24) ))
+    dom_list='foo.bar example.com'
+    gpw_arg=
+
+    for f in ${dom_list}
+    do
+        printf '<domain time=%-10.10lu>%s</domain>\n' $today $f
+        gpw_arg+="--dom $f "
+    done > ${base_test_name}.base
+
+    $gpw ${gpw_arg} --dom - > ${base_test_name}.res
+    cmp ${base_test_name}.res ${base_test_name}.base || \
+        die $'miscompare in domain names:\n'"$(
+            diff -u ${base_test_name}.out ${base_test_name}.base)"
+}
+
+init_test
+trap die 0
+run_test
+trap '' 0
+cleanup
+exit 0
