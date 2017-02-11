@@ -271,7 +271,7 @@ Every time you use @code{--domain example.com}, a domain entry will
 be added or updated with the day count since 1970.
 
 If you choose to use this, I must emphasize very strongly:
-@bold{do not use a password id}.  The names are stored in plain
+@emph{do not use a password id}.  The names are stored in plain
 text.  You are expected to use a transform to convert a domain
 into a password id.  That transform should only be known by you
 and not be stored anywhere (outside your own brain).
