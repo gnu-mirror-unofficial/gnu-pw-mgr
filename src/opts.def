@@ -112,7 +112,8 @@ flag            = {
 	The seed values consist of four named parts (sub-options):
 	@table @samp
 	@item tag
-	These are displayed next to each displayed password to help identify them.
+	These are displayed next to each displayed password to help identify
+	them.
 	@item text
 	This is not displayed, but is used for the SHA initial value.
 	This may be arbitrarily long.
@@ -534,6 +535,7 @@ flag            = {
     max         = NOLIMIT;
     descrip     = 'a reminder of domains used for password id';
     no-preset;
+    stack-arg;
 
     doc = <<- _EOF_
 	If you create a lot of passwords, it is easy to forget which

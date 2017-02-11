@@ -162,14 +162,8 @@ find_home(void)
     return res;
 }
 
-/**
- * Figure out the name of the config file.  If ~/.local/ exists, we look there.
- * If not, we use ~/.gnupwmgrrc.
- *
- * @returns  the name in a scribble buffer.  Copy it out to save it.
- */
 static char *
-find_cfg_name(void)
+set_cfg_dir(bool * have_local)
 {
     char * fname;
 
@@ -199,10 +193,10 @@ find_cfg_name(void)
      * on whether $HOME or $HOME/.local is used.
      */
     if ((stat(fname, &sbf) != 0) || ! S_ISDIR(sbf.st_mode)) {
-        home = home_cfg;
+        *have_local = false;
 
     } else {
-        home = local_cfg;
+        *have_local = true;
 
         if ((sbf.st_mode & secure_mask) != 0)
             die(GNU_PW_MGR_EXIT_PERM, cfg_insecure, fname);
@@ -211,10 +205,28 @@ find_cfg_name(void)
         fname[fname_len++] = '/';
     }
 
+    fname[fname_len] = NUL;
+    return fname;
+}
+
+/**
+ * Figure out the name of the config file.  If ~/.local/ exists, we look there.
+ * If not, we use ~/.gnupwmgrrc.
+ *
+ * @returns  the name in a scribble buffer.  Copy it out to save it.
+ */
+static char *
+find_cfg_name(void)
+{
+    bool   have_local;
+    char * fname     = set_cfg_dir(&have_local);
+    size_t fname_len = strlen(fname);
+    struct stat sbf;
+
     /*
      * Ensure it is properly secured.
      */
-    strcpy(fname + fname_len, home);
+    strcpy(fname + fname_len, have_local ? local_cfg : home_cfg);
     if (stat(fname, &sbf) != 0) {
         int fd;
         if (errno != ENOENT)
@@ -228,5 +240,22 @@ find_cfg_name(void)
         die(GNU_PW_MGR_EXIT_PERM, cfg_insecure, fname);
 
     set_config_name(fname);
+    return fname;
+}
+
+/**
+ * Figure out the name of the domain name file.
+ * See find_cfg_name() above.
+ *
+ * @returns  the name in a scribble buffer.  Copy it out to save it.
+ */
+static char *
+find_dom_file(void)
+{
+    bool   have_local;
+    char * fname     = set_cfg_dir(&have_local);
+    size_t fname_len = strlen(fname);
+
+    strcpy(fname + fname_len, have_local ? local_dom : home_dom);
     return fname;
 }
