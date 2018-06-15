@@ -31,8 +31,8 @@ run_test() {
 
     for f in ${dom_list}
     do
-        printf '<domain time=%-10.10lu>%s</domain>\n' $today $f
-        gpw_arg+="--dom $f "
+        /usr/bin/printf '<domain time=%-10.10lu>%s</domain>\n' $today $f
+        gpw_arg="${gpw_arg}--dom $f "
     done > ${base_test_name}.base
 
     $gpw ${gpw_arg} --dom - > ${base_test_name}.res

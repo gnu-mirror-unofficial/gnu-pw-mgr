@@ -128,10 +128,8 @@ load_config_file(void)
 #endif // not SORT_PW_CFG only
 
 /**
- * Find the user's home directory.  There are two implementations.
- * When the TEST_GPW preprocessing macro is defined, the home
- * directory is gotten from the TEST_HOME environment variable.
- * Normally, it is gotten from the password entry for the current user.
+ * Find the user's home directory.  If the --seed-file option is present,
+ * we'll just use the directory portion of that name.
  *
  * This presumes getpwuid() works.  If not, then getenv("HOME") is used.
  *
@@ -143,19 +141,38 @@ find_home(void)
 {
     char const * res;
 
-# if defined(TEST_GPW)
-    static char const test_home[] = "TEST_HOME";
-    res = getenv(test_home);
+#ifndef SORT_PW_CFG // no --seed-file option for sort
+    if (HAVE_OPT(CONFIG_FILE)) {
+        char * p = strdup(OPT_ARG(CONFIG_FILE));
+        if (p == NULL)
+            nomem_err(strlen(OPT_ARG(CONFIG_FILE)), "file name");
 
-# elif defined(HAVE_GETPWUID)
-    struct passwd * pwd = getpwuid(getuid());
-    if (pwd == NULL)
-        die(GNU_PW_MGR_EXIT_HOMELESS, no_pwent, (unsigned int)getuid());
-    res = strdup(pwd->pw_dir);
+        res = p;
+        p = strrchr(p, '/');
+        /*
+         * If there is no directory separator, we'll use the current directory.
+         */
+        if (p != NULL)
+            *p = NUL;
+        else
+            strcpy(p, ".");
+
+    }
+    else
+#endif // SORT_PW_CFG defined
+
+    {
+# if defined(HAVE_GETPWUID)
+        struct passwd * pwd = getpwuid(getuid());
+        if (pwd == NULL)
+            die(GNU_PW_MGR_EXIT_HOMELESS, no_pwent, (unsigned int)getuid());
+        res = strdup(pwd->pw_dir);
 
 # else
-    res = strdup(getenv("HOME"));
+        res = strdup(getenv("HOME"));
 # endif
+    }
+
     if (res == NULL)
         die(GNU_PW_MGR_EXIT_NO_MEM, no_mem_4_home);
 
@@ -176,6 +193,15 @@ set_cfg_dir(bool * have_local)
        || (! S_ISDIR(sbf.st_mode)))
 
         die(GNU_PW_MGR_EXIT_HOMELESS, no_home);
+
+#ifndef SORT_PW_CFG
+    if (HAVE_OPT(CONFIG_FILE)) {
+        size_t l = strlen(OPT_ARG(CONFIG_FILE)) + 1;
+        fname = xscribble_get(l);
+        strcpy(fname, home);
+        return fname;
+    }
+#endif // ! SORT_PW_CFG
 
     fname = xscribble_get(fname_len + strlen(home));
 
@@ -218,30 +244,49 @@ set_cfg_dir(bool * have_local)
 static char *
 find_cfg_name(void)
 {
-    bool   have_local;
-    char * fname     = set_cfg_dir(&have_local);
-    size_t fname_len = strlen(fname);
-    struct stat sbf;
+    char * fname;
+    size_t fname_len;
 
-    /*
-     * Ensure it is properly secured.
-     */
-    strcpy(fname + fname_len, have_local ? local_cfg : home_cfg);
-    if (stat(fname, &sbf) != 0) {
-        int fd;
-        if (errno != ENOENT)
-            die(GNU_PW_MGR_EXIT_NO_CONFIG, cfg_missing_fmt, fname);
-        fd = open(fname, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
-        if ((fd < 0) || (close(fd) < 0))
-            fserr(GNU_PW_MGR_EXIT_NO_CONFIG, open_z, fname);
-        chmod(fname, S_IRUSR | S_IWUSR);
+#ifndef SORT_PW_CFG
+    if (HAVE_OPT(CONFIG_FILE)) {
+        char const * fn = OPT_ARG(CONFIG_FILE);
+        (void)set_cfg_dir(NULL);
+        fname_len = strlen(fn) + 1;
+        fname     = xscribble_get(fname_len);
+        strcpy(fname, fn);
+    }
+    else
+#endif // ! SORT_PW_CFG
 
-    } else if ((sbf.st_mode & secure_mask) != 0)
-        die(GNU_PW_MGR_EXIT_PERM, cfg_insecure, fname);
+    {
+        bool        have_local;
+        struct stat sbf;
+
+        fname     = set_cfg_dir(&have_local);
+        fname_len = strlen(fname);
+    
+        /*
+         * Ensure it is properly secured.
+         */
+        strcpy(fname + fname_len, have_local ? local_cfg : home_cfg);
+        if (stat(fname, &sbf) != 0) {
+            int fd;
+            if (errno != ENOENT)
+                die(GNU_PW_MGR_EXIT_NO_CONFIG, cfg_missing_fmt, fname);
+            fd = open(fname, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
+            if ((fd < 0) || (close(fd) < 0))
+                fserr(GNU_PW_MGR_EXIT_NO_CONFIG, open_z, fname);
+            chmod(fname, S_IRUSR | S_IWUSR);
+
+        } else if ((sbf.st_mode & secure_mask) != 0)
+            die(GNU_PW_MGR_EXIT_PERM, cfg_insecure, fname);
+    }
 
     set_config_name(fname);
     return fname;
 }
+
+#ifndef SORT_PW_CFG // code for gnu-pw-mgr only
 
 /**
  * Figure out the name of the domain name file.
@@ -252,10 +297,21 @@ find_cfg_name(void)
 static char *
 find_dom_file(void)
 {
-    bool   have_local;
-    char * fname     = set_cfg_dir(&have_local);
-    size_t fname_len = strlen(fname);
+#ifndef SORT_PW_CFG
+    if (HAVE_OPT(CONFIG_FILE)) {
+        (void)set_cfg_dir(NULL);
+        return strdup(OPT_ARG(CONFIG_FILE));
+    }
+#endif // ! SORT_PW_CFG
 
-    strcpy(fname + fname_len, have_local ? local_dom : home_dom);
-    return fname;
+    {
+        bool   have_local;
+        char * fname     = set_cfg_dir(&have_local);
+        size_t fname_len = strlen(fname);
+
+        strcpy(fname + fname_len, have_local ? local_dom : home_dom);
+        return fname;
+    }
 }
+#endif
+

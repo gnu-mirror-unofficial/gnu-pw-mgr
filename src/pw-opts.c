@@ -20,6 +20,12 @@
  *  with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <fcntl.h>
+#include <string.h>
+
+#include <sys/types.h>
+#include <sys/stat.h>
+
 /**
  * Hash a password id into an option search string.
  * The options associated with a password id are associated
@@ -32,7 +38,7 @@
 static char *
 make_pwid_mark(char const * name, size_t * len)
 {
-    char resbuf[256 / NBBY];
+    char resbuf[256 / NBBY]; // 256 bits (Number of Bits per BYte)
     char txtbuf[sizeof(long) + (sizeof(resbuf) * 3) / 2];
     struct sha256_ctx ctx;
     sha256_init_ctx(&ctx);
@@ -380,8 +386,8 @@ next_pwid_opt(char const * scan, char const * mark, size_t mark_len)
 }
 
 /**
- * fix up the options.  We insert two options:  --load-opts and
- * --no-load-opts.  The former specifies the config file we decided upon,
+ * Insert two options:  --load-opts and --no-load-opts.
+ * The former specifies the config file we decided upon,
  * and the latter disables the processing of any other config files.
  * When the option processing is done, we'll choke and die if any other
  * config files got loaded.
@@ -390,7 +396,7 @@ next_pwid_opt(char const * scan, char const * mark, size_t mark_len)
  * @param av  pointer to argv argument to main
  */
 static void
-fix_options(int * ac, char *** av)
+insert_load_opts(int * ac, char *** av)
 {
     char *  fname = find_cfg_name();
     int     argc  = *ac + 3;
@@ -416,4 +422,64 @@ fix_options(int * ac, char *** av)
      * processing value.
      */
     post_cfg_setting = OPT_VALUE_CCLASS;
+}
+
+/**
+ * fix up the options. If there is a "--config-file" option, we leave
+ * everything alone. Otherwise, we insert our own "--load-opts" and
+ * disable user's use of that option.
+ *
+ * @param ac  pointer to argc argument to main
+ * @param av  pointer to argv argument to main
+ */
+static void
+create_cfg_file(char * opt, char * opt1)
+{
+    struct stat sb;
+    int fno;
+
+    opt = strchr(opt, '=');
+    opt = (opt == NULL)
+        ? opt1
+        : opt + 1;
+
+    set_config_name(opt);
+    if (stat(opt, &sb) == 0)
+        return;
+
+    fno = creat(opt, O_WRONLY);
+    if (fno < 0)
+        fserr(GNU_PW_MGR_EXIT_INVALID, "creat", opt);
+
+    if (fchmod(fno, S_IRUSR | S_IWUSR) != 0)
+        fserr(GNU_PW_MGR_EXIT_INVALID, "chmod", opt);
+
+    fno = close(fno);
+    if (fno != 0)
+        fserr(GNU_PW_MGR_EXIT_INVALID, "close", opt);
+}
+
+/**
+ * fix up the options. If there is a "--config-file" option, we leave
+ * everything alone. Otherwise, we insert our own "--load-opts" and
+ * disable user's use of that option.
+ *
+ * @param ac  pointer to argc argument to main
+ * @param av  pointer to argv argument to main
+ */
+static void
+fix_options(int * ac, char *** av)
+{
+    static char const conf[] = "--config";
+    int     argc  = *ac;
+    char ** argv  = *av;
+    while (--argc > 0) {
+        char * a = *++argv;
+        int    c = strncmp(a, conf, sizeof(conf) - 1);
+        if (c == 0) {
+            create_cfg_file(a, argv[1]);
+            return;
+        }
+    }
+    insert_load_opts(ac, av);
 }

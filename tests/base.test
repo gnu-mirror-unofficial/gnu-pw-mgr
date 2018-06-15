@@ -34,9 +34,10 @@ ck_test() {
 
 run_test() {
     set -e
+    cfgfile="${TEST_HOME}/.local/gnupwmgr.cfg"
     $gpw -t 'TEST ONLY TAG' --text \
         'This is only a test.  Were it real, you would likely know.  It is not.'
-    test -f "${TEST_HOME}/.local/gnupwmgr.cfg" || \
+    test -f "${cfgfile}" || \
         die "config file not created:  ${TEST_HOME}/.local/gnupwmgr.cfg"
     ck_test 'TEST ONLY TAG'
 
@@ -84,9 +85,9 @@ run_test() {
         die "requiring two digits failed"
 
     $gpw -t 'TEST ONLY TAG'
-    test -f "${TEST_HOME}/.local/gnupwmgr.cfg" || \
+    test -f "${cfgfile}" || \
         die "config file removed:  ${TEST_HOME}/.local/gnupwmgr.cfg"
-    grep -F 'TEST ONLY TAG'  "${TEST_HOME}/.local/gnupwmgr.cfg" && \
+    grep -F 'TEST ONLY TAG'  "${cfgfile}" && \
         die "'TEST ONLY TAG' seed remains in config file"
 
     set +e

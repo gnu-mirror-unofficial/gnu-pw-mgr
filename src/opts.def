@@ -550,6 +550,27 @@ flag            = {
 	_EOF_;
 };
 
+flag            = {
+    name        = config-file;
+    arg-type    = string;
+    arg-name    = CONFIG-FILE;
+    no-preset;
+    immediate;
+    descrip     = 'specify configuration file';
+    flag-code   =  <<-  _EOF_
+	\    optionLoadOpt(pOptions, pOptDesc);
+	\    pOptDesc = pOptions->pOptDesc + INDEX_OPT_LOAD_OPTS;
+	\    pOptDesc->fOptState |= OPTST_DISABLED;
+	\    (pOptDesc->optOccCt)++;
+	_EOF_;
+
+    doc = <<- _EOF_
+	If you need an alternate location for storing your password
+	seed files, use this option. It must be specified on the
+        command line every time it is needed.
+	_EOF_;
+};
+
 /*
  # * * * * * * * * * * * * * * * * * * * *
  */

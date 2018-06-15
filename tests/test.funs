@@ -29,12 +29,6 @@ die() {
 
 cleanup() {
     rm -rf ${base_test_name}.base ${base_test_name}.res ${TEST_HOME}
-    $made_test && {
-        made_test=false
-        cd "$buildsrcdir"
-        mv -f SAVE-OBJS/* .
-        rmdir SAVE-OBJS || die "failed during cleanup"
-    } ||  :
 }
 
 init_test() {
@@ -51,28 +45,8 @@ init_test() {
     chmod 700 "${TEST_HOME}/.local"
     export TEST_HOME
 
-    cd ../src
-    test -f gnu-pw-mgr && {
-        gpw=`pwd`/gnu-pw-mgr
-        made_test=`strings gnu-pw-mgr | fgrep TEST_HOME`
-        test "X$made_test" = X || {
-            made_test=false
-            export made_test gpw
-            cd - >/dev/null
-            return 0
-        }
-    }
-
-    made_test=true
-    mkdir SAVE-OBJS
-    buildsrcdir=`pwd`
-
-    for f in *.o gnu-pw-mgr
-    do test -f $f && mv $f SAVE-OBJS/.
-    done
-    ${MAKE:-make} gnu-pw-mgr CFLAGS='-g3 -O0 -DTEST_GPW=1' LDFLAGS=-static
-    gpw=`pwd`/gnu-pw-mgr
-    export made_test gpw
+    gpw=`unset CDPATH 2>/dev/null ; cd ../src ; pwd`/gnu-pw-mgr
+    gpw="$gpw --config-file=${TEST_HOME}/.local/gnupwmgr.cfg"
 }
 
 readonly run_dir=`pwd`
