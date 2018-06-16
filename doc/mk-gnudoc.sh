@@ -53,6 +53,7 @@ set_config_values()
     : ${MAKE=`command -v make`}
     : ${srcdir=`pwd`}
     unset CDPATH
+    ${VERBOSE-false} && set -x
 
     if ( exec 2>/dev/null 1>&2
          shopt -qo xtrace
@@ -102,6 +103,7 @@ build_gnudocs() {
         ${gend} $opts gnu-pw-mgr "$title"
 }
 
+type texi2html 2>/dev/null || die "this fails without texi2html"
 set_config_values
 build_gnudocs
 
