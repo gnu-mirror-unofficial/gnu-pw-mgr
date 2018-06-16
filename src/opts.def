@@ -589,7 +589,9 @@ flag            = {
     doc = <<- _EOF_
 	If you need an alternate location for storing your password
 	seed files, use this option. It must be specified on the
-        command line every time it is needed.
+        command line every time it is needed. You are responsible to
+        ensure that the directory already exists. The file will be
+        left read-only when gnu-pw-mgr exits.
 	_EOF_;
 };
 
