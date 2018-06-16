@@ -223,6 +223,7 @@ print_pwid_status(char const * name)
 {
     static char const lstr_fmt[] = "  %-10s %s\n";
     static char const ldig_fmt[] = "  %-10s %u\n";
+    static char const ldig_dft[] = "  %-10s %u (default)\n";
 
     bool have_data = false;
 
@@ -274,6 +275,8 @@ print_pwid_status(char const * name)
 
     if (! have_data)
         printf("The %s password id has all default settings\n", name);
+    else if (! HAVE_OPT(PBKDF2))
+        printf(ldig_dft, "pbkdf2 ct", (unsigned int)OPT_VALUE_PBKDF2);
 }
 
 /**

@@ -27,17 +27,19 @@ typedef enum { CC_UPPER, CC_LOWER, CC_DIGIT, CC_SPECIAL, CT_CC } ccl_t;
  *  at most two same characters in a row.
  *
  * @param[in,out] pw  the password string
+ * @returns true -> all done, false otherwise
  */
-static void
-clean_triplets(char * pw)
+static bool
+clean_triplets(char * pw, bool sequence)
 {
+    bool res = true;
     unsigned char last = *(pw++);
     if (last == NUL)
         die(GNU_PW_MGR_EXIT_CODING_ERROR, inv_pwd);
 
     for (;; pw++) {
         if (*pw == NUL)
-            return;
+            return res;
 
         if (*pw != last) {
             last = *pw;
@@ -45,7 +47,7 @@ clean_triplets(char * pw)
         }
 
         if (*(++pw) == NUL)
-            return;
+            return res;
 
         if (*pw != last) {
             last = *pw;
@@ -69,9 +71,108 @@ clean_triplets(char * pw)
                 last = 'a';
 
         } else
-            last = OPT_ARG(SPECIALS)[2]; // There is at most 1 of these.
+            /*
+             * New rule: if sequences are disallowed, then the third
+             * repeated special char becomes 'm'. We otherwise could
+             * (theoretically) get into an infinite loop.
+             */
+            last = sequence ? 'm' : OPT_ARG(SPECIALS)[2];
+
         *pw = last;
+        res = false;
     }
+}
+
+/**
+ *  Make sure that no three characters are sequential.
+ *
+ * @param[in,out] pw  the password string
+ * @returns true -> all done, false otherwise
+ */
+static bool
+clean_sequence(char * pw)
+{
+    bool res = true;
+    unsigned char last[2];
+
+    last[1] = *(pw++);
+    if (last[1] == NUL)
+        die(GNU_PW_MGR_EXIT_CODING_ERROR, inv_pwd);
+
+    /*
+     * Until we hit a NUL byte, check current and previous two chars for
+     * a sequence.
+     */
+    while (last[0] = last[1], last[1] = *(pw++), *pw != NUL) {
+        if (*pw != last[1]+1)
+            continue; // current does not follow previous
+
+        if (last[1] != last[0]+1)
+            continue; // two previous not sequential
+
+        /*
+         * We have a triplet sequence. Flip the previous char.
+         */
+        if (isdigit(last[1])) {
+            pw[-1] += (last[1] < '5') ? 5 : -5; // rotate digit 5
+
+        } else if (isupper(last[1])) {
+            pw[-1] = tolower(last[1]); // change case
+
+        } else if (islower(last[1])) {
+            pw[-1] = toupper(last[1]); // change case
+
+        } else {
+            /*
+             * We have three chars in a row with the middle one a special.
+             * Pick another of the three special chars.
+             */
+            pw[-1] = (last[1] != OPT_ARG(SPECIALS)[2])
+                ? OPT_ARG(SPECIALS)[2]
+                : OPT_ARG(SPECIALS)[1];
+        }
+        res = false;
+    }
+
+    return res;
+}
+
+/**
+ *  Make sure than any triple characters get fiddled into something with
+ *  at most two same characters in a row.
+ *
+ * @param[in,out] pw  the password string
+ */
+static bool
+clean_no_three(char * pw)
+{
+    bool triplets = (OPT_VALUE_CCLASS & CCLASS_NO_TRIPLETS) ? true : false;
+    bool sequence = (OPT_VALUE_CCLASS & CCLASS_NO_SEQUENCE) ? true : false;
+    bool done     = false;
+    bool did_work = false;
+
+    assert(triplets || sequence);
+
+    /*
+     * Loop until both clean_triplets() and clean_sequence() return true.
+     */
+    while (! done) {
+        bool unchanged = false;
+        if (! triplets)
+            done = true;
+        else
+            done = unchanged = clean_triplets(pw, sequence);
+
+        if (sequence) {
+            done = clean_sequence(pw);
+            unchanged |= done;
+        }
+
+        if (UNLIKELY(! unchanged))
+            did_work = true;
+    }
+
+    return did_work;
 }
 
 /**
@@ -191,13 +292,16 @@ pick_something(uintptr_t ccls, char * pch, int * cta)
  * @param[out] cta          array of character class counts
  *
  * @returns the mask of the classes of characters found in \a pw.
- *  The disallowed character classes are always "found"
+ *
+ *  The disallowed character classes are always "found",
+ * other than the CCLASS_NO_ALPHA class. That implies all digits and
+ * is handled elsewhere.
  */
 static uintptr_t
 count_pw_class(char * pw, bool no_spec, int * cta)
 {
-    static uintptr_t const never =
-        CCLASS_NO_SPECIAL | CCLASS_NO_ALPHA | CCLASS_NO_TRIPLETS;
+    static uintptr_t const never = CCLASS_NO_SPECIAL | CCLASS_NO_THREE;
+
     uintptr_t res = OPT_VALUE_CCLASS & never;
     char *   scan = pw;
 
@@ -381,7 +485,12 @@ add_special(char * pw, int * cta)
  * fiddle the password to comply with requirements.  Special characters may be
  * required or prohibited.  Both upper and lower case letters may be required.
  * The password may be forced to be all digits.  The @code{--class} option
- * should be specific to each password id.
+ * should be specific to each password id. If "clean_no_three()" makes changes,
+ * then we need to sanity check the result. It's possible a minimum count of
+ * a character class get violated.
+ *
+ * Except for when special characters are required, with reasonable length
+ * passwords, it is unusual for this fixup function to do anything.
  *
  * @param[in,out] pw  the password buffer
  */
@@ -391,49 +500,65 @@ fix_std_pw(char * pw)
     int cta[4];
     uintptr_t need;
 
-    {
-        bool no_spec = (OPT_VALUE_CCLASS & CCLASS_NO_SPECIAL)  ? true : false;
-        need = count_pw_class(pw, no_spec, cta);
-        need = (need & OPT_VALUE_CCLASS) ^ OPT_VALUE_CCLASS;
+    for (;;) {
+        {
+            bool no_spec = (OPT_VALUE_CCLASS & CCLASS_NO_SPECIAL)  ? true : false;
+            need = count_pw_class(pw, no_spec, cta);
+            need = (need & OPT_VALUE_CCLASS) ^ OPT_VALUE_CCLASS;
+        }
+
+        /*
+         * IF there are any needs, it is probably because special chars are
+         * required, but none got into the result.
+         */
+        if (UNLIKELY(need != 0)) {
+
+            if (ISLIKELY((need & CCLASS_SPECIAL) != 0))
+                add_special(pw, cta);
+
+            if (UNLIKELY((need & CCLASS_TWO_SPECIAL) != 0))
+                add_special(pw, cta); // unusual requirement
+
+            /*
+             * "need" are the bits in OPT_VALUE_CLASS not found by count_pw_class
+             *
+             * requiring "alpha" is always one-only and can never be in
+             * conjunction with upper or lower.
+             */
+            if ((need & CCLASS_ALPHA) != 0)
+                add_upper(pw, cta);
+
+            else {
+                if ((need & CCLASS_UPPER) != 0)
+                    add_upper(pw, cta);
+
+                if (UNLIKELY((need & CCLASS_TWO_UPPER) != 0))
+                    add_upper(pw, cta);
+
+                if ((need & CCLASS_LOWER) != 0)
+                    add_lower(pw, cta);
+
+                if (UNLIKELY((need & CCLASS_TWO_LOWER) != 0))
+                    add_lower(pw, cta);
+            }
+
+            if ((need & CCLASS_DIGIT) != 0)
+                add_digit(pw, cta);
+
+            if (UNLIKELY((need & CCLASS_TWO_DIGIT) != 0))
+                add_digit(pw, cta);
+        }
+
+        if (ISLIKELY((OPT_VALUE_CCLASS & CCLASS_NO_THREE) == 0))
+            return;
+
+        if (ISLIKELY(! clean_no_three(pw)))
+            return;
+        /*
+         * "clean_no_three()" did some cleaning, so recompute
+         * the satisfied classes and try again.
+         */
     }
-
-    /*
-     * "need" are the bits in OPT_VALUE_CLASS not found by count_pw_class
-     *
-     * requiring "alpha" is always one-only and can never be in
-     * conjunction with upper or lower.
-     */
-    if ((need & CCLASS_ALPHA) != 0)
-        add_upper(pw, cta);
-
-    else {
-        if ((need & CCLASS_UPPER) != 0)
-            add_upper(pw, cta);
-
-        if ((need & CCLASS_TWO_UPPER) != 0)
-            add_upper(pw, cta);
-
-        if ((need & CCLASS_LOWER) != 0)
-            add_lower(pw, cta);
-
-        if ((need & CCLASS_TWO_LOWER) != 0)
-            add_lower(pw, cta);
-    }
-
-    if ((need & CCLASS_DIGIT) != 0)
-        add_digit(pw, cta);
-
-    if ((need & CCLASS_TWO_DIGIT) != 0)
-        add_digit(pw, cta);
-
-    if ((need & CCLASS_SPECIAL) != 0)
-        add_special(pw, cta);
-
-    if ((need & CCLASS_TWO_SPECIAL) != 0)
-        add_special(pw, cta);
-
-    if ((OPT_VALUE_CCLASS & CCLASS_NO_TRIPLETS) != 0)
-        clean_triplets(pw);
 }
 
 /**

@@ -65,6 +65,14 @@ export[2] =<<-_EOF_
 	#define MIN_BUF_LEN ((256 / NBBY) + (256 / (NBBY * 2))) // 48
 	#define VER_TO_INT(_maj, _min, _rev) \
 	\	(((_maj)<<20) + ((_min)<<10) + (_rev))
+	#define CCLASS_NO_THREE (CCLASS_NO_TRIPLETS | CCLASS_NO_SEQUENCE)
+	#ifdef __GNUC__
+        # define UNLIKELY(_e) __builtin_expect ((_e), 0)
+        # define ISLIKELY(_e) __builtin_expect ((_e), 1)
+        #else
+        # define UNLIKELY(_e) (_e)
+        # define ISLIKELY(_e) (_e)
+        #endif
 
 	static unsigned int const secure_mask   = S_IRWXG | S_IRWXO;
 	static char const * config_file_name    = NULL;
@@ -105,9 +113,8 @@ flag            = {
     no-command;
 
     doc = <<- _EOF_
-	This option is @strong{not} a command line option.
-	It is also the only option that is directly processed from
-	the config file.
+	This option is @strong{not} a command line option.  It is also
+	the only option that is directly processed from the config file.
 
 	The seed values consist of four named parts (sub-options):
 	@table @samp
@@ -133,9 +140,9 @@ flag            = {
 	are @emph{not} marked as @code{--shared}.
 	@end table
 
-	It is expected that when you must create a new password for an
-	existing site, you will either add a seed to your config file or
-	change the value of @code{--use-pbkdf2}.  It defaults to 10007.
+	The easiest way to change a password is to specify a "pbkdf2" rehash
+        count (with @code{--use-pbkdf2}).  It defaults to 10007. You can
+        determine the current value with the @code{--status} option.
 
 	Specify only the @code{--tag} and @code{--text} (and maybe
 	@code{--shared}) command line options and the program will insert the
@@ -185,6 +192,8 @@ flag            = {
     doc = <<- _EOF_
 	The text for a password seed to be added to the config file.
 	This text cannot include the 7 character sequence "</text>".
+        There must always be at least one. Multiple text seeds will
+        cause multiple passwords to be printed out.
 
 	This text must be at least 64 characters long.  The expectation
 	is you will write a sentence or two that you can easily remember,
@@ -197,6 +206,12 @@ flag            = {
 	such a case, you will need to save the configuration file some place
 	secure or it will be extremely difficult to reconstruct it, should
 	that become necessary.
+
+        The original expectation was that passwords would be updated on an
+        occasional basis. Now that I have over 100 login credentials, it is
+        clearly infeasible to go around and update them all. Instead, I have
+        to decide which are important to update and use the @code{--use-pbkdf2}
+        option to change the rehash count.
 	_EOF_;
 };
 
@@ -255,6 +270,14 @@ flag            = {
 	both that you have set it up and you will have a reminder what
 	your login name is.  Avoid using your real login name.
 
+	Also, there are now some sites that send password credentials to a
+        validation domain that is common among several domains. Since this
+        application forces you to use different passwords for different domains
+        and these domains force you to use the same password for different
+        domains, this option solves the irresistable force and immovable
+        object dilemma. For each of the dependent domains, specify this option
+        that will remind you of the correct password id.
+
 	The @code{login-id} has no effect on the final password, so it
 	may be specified or altered at any time.
 	_EOF_;
@@ -297,8 +320,10 @@ flag = {
     arg-type    = set-member;
     keyword     = alpha, upper, lower, digit, special, // requirements
                   no-special, no-alpha, no-triplets,   // prohibitions
-                  pin, alnum, // abbreviations
-                  two-upper, two-lower, two-digit, two-special;
+                  no-sequence,                         // prohibition
+                  pin, alnum,                          // abbreviations
+                  two-upper, two-lower, two-digit,     // two of
+                  two-special;                         //   requirements
     arg-default = alpha, digit;
 
     doc = <<- _EOF_
@@ -390,12 +415,9 @@ flag            = {
 	This can be over-ridden by disabling pbkdf2 entirely or by specifying
 	a different count.
 
-	Normally, this option should not be used.  If, however, you are
-	getting invalid password complaints by your web site, this option
-	might be used to change the computed password.  Any value other than
-	@code{10007} will yield a completely different password.  For the
-	several users of a pre-release version of this program, specify
-	@code{no-pbkdf2} to yield the original password result.
+	This is the normal mechanism by which you should be changing your
+        password. The new count will be stored with a hash key and used the
+        next time the password is needed.
 
 	Please see RFC 2898 for a specification of the PBKDF2 (Password-Based
 	Key Derivation Function version 2) function.
