@@ -4,7 +4,7 @@
 @ignore
 
 This file is part of gnu-pw-mgr.
-Copyright (C) 2013-2017 Bruce Korb, all rights reserved.
+Copyright (C) 2013-2018 Bruce Korb, all rights reserved.
 This is free software. It is licensed for use, modification and
 redistribution under the terms of the GNU General Public License,
 version 3 or later <http://gnu.org/licenses/gpl.html>
@@ -43,7 +43,7 @@ comply with.  There are some possible workarounds:
 @item
 Request the addition of a new character classification flag.  If the issue
 can be satisfied by fiddling the emitted password a little bit (with the
-@code{--pbkdf2} option), that would be faster and easier than implementing
+@code{--use-pbkdf2} option), that would be faster and easier than implementing
 a new option.
 
 @item
@@ -62,8 +62,8 @@ configuration file.  Still, it is not wise to tempt fate.
 
 If you use BASH for your shell,
 @example
-HISTCONTROL=ignorespace
-HISTIGNORE=gnu-pw-mgr *:*/gnu-pw-mgr *
+HISTCONTROL=ignorespace:ignoredups
+HISTIGNORE=gnu-pw-mgr *
 unset HISTFILE
 @end example
 are your friends.  Press the space bar before the command name,
@@ -86,12 +86,9 @@ passwords on a lot of sites, you won't be especially eager to do it again.
 So, play with it on one site you use a lot, change the password a lot as
 you change the transform and then make a good decision.
 
-Once you need to or are required to change a password, add another seed
-to your configuration file.  Henceforth, you will be presented two
-passwords.  If you have updated your password, use the more recent
-one.  (That is what @xref{gnu-pw-mgr seed-options,the tags are for}.)
-Otherwise, login with the old password and update to the new one.
-Eventually, you should be able to retire the old seed.
+Once you need to or are required to change a password, simply specify
+a new ``--use-pbkdf2'' value for that password id. You may see its
+current value by specifying ``--status''.
 
 When choosing your password id transform, use things that you can easily
 remember.  Especially if some nonsense thing can be easily remembered.

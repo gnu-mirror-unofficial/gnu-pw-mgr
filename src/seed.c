@@ -1,7 +1,7 @@
 /*
  *  This file is part of gpw.
  *
- *  Copyright (C) 2013-2017 Bruce Korb, all rights reserved.
+ *  Copyright (C) 2013-2018 Bruce Korb, all rights reserved.
  *  This is free software. It is licensed for use, modification and
  *  redistribution under the terms of the GNU General Public License,
  *  version 3 or later <http://gnu.org/licenses/gpl.html>
@@ -124,7 +124,7 @@ ver_str_to_number(void)
             die(GNU_PW_MGR_EXIT_CODING_ERROR, bad_vers);
         res += v << shift;
         switch (*pn) {
-        case '-': case '\0':
+        case '-': case NUL:
             goto return_res;
 
         case '.':

@@ -4,7 +4,7 @@
 
 @ignore
 This file is part of gnu-pw-mgr.
-Copyright (C) 2013-2017 Bruce Korb, all rights reserved.
+Copyright (C) 2013-2018 Bruce Korb, all rights reserved.
 This is free software. It is licensed for use, modification and
 redistribution under the terms of the GNU General Public License,
 version 3 or later <http://gnu.org/licenses/gpl.html>
@@ -140,7 +140,7 @@ id and the resulting password.  It is a one way hash function.  It is
 not an encryption.
 
 Every site has their own set of attributes that make for acceptable
-passwords, the hash of the inputs must be modified.  The hash of the
+passwords, so the hash of the inputs must be modified.  The hash of the
 password id by itself is used as a key to look up any previously
 established password constraints (@pxref{gnu-pw-mgr
 password-options,,password options}).  These password attributes are
@@ -150,13 +150,14 @@ not be exactly your login name, just something that will remind you
 about which one you use for the site.  It may be omitted, if you are
 sure you can remember.
 
-These site specific options are then used to format the password display.
+These site specific options are then used to constrain the alphabet
+used to construct the password.
 
 @node security questions
 @section The answers to security questions
 
-Many sites now add security questions that you must answer when you first set up your account.
-There are several problems with these:
+Many sites now add security questions that you must answer when you
+first set up your account.  There are several problems with these:
 
 @enumerate
 @item
@@ -184,6 +185,11 @@ be answers to the questions, @samp{what was your dog's name} or
 valid only for the @samp{who} password id and the test's seed string.
 With a different password id or seed, you would get a different answer.
 
+NOTE: I have finally figured out that it is inconvenient to have
+the security question answers change when passwords change.
+Therefore, this option will, henceforth, print *two* answers.
+The first will change whenever the password changes. The second
+will only vary on the input password id and confirmation text.
 @node sharing passwords
 @section Sharing a password with someone
 

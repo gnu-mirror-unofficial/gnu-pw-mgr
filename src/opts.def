@@ -12,7 +12,7 @@ version         = `tv=../.tarball-version
 
 /*
  *  This file is part of gnu-pw-mgr.
- *  Copyright (C) 2013-2017 Bruce Korb, all rights reserved.
+ *  Copyright (C) 2013-2018 Bruce Korb, all rights reserved.
  *  This is free software. It is licensed for use, modification and
  *  redistribution under the terms of the GNU General Public License,
  *  version 3 or later <http://gnu.org/licenses/gpl.html>
@@ -66,6 +66,8 @@ export[2] =<<-_EOF_
 	#define VER_TO_INT(_maj, _min, _rev) \
 	\	(((_maj)<<20) + ((_min)<<10) + (_rev))
 	#define CCLASS_NO_THREE (CCLASS_NO_TRIPLETS | CCLASS_NO_SEQUENCE)
+        #define SECONDS_IN_DAY  (60UL * 60UL * 24UL)
+
 	#ifdef __GNUC__
         # define UNLIKELY(_e) __builtin_expect ((_e), 0)
         # define ISLIKELY(_e) __builtin_expect ((_e), 1)
@@ -78,6 +80,7 @@ export[2] =<<-_EOF_
 	static char const * config_file_name    = NULL;
 	static size_t       config_file_size    = 0;
 	static uintptr_t    post_cfg_setting    = 0UL;
+	static char const * pbkdf2_date         = undated_z;
 
 	typedef struct str_list str_list_t;
 	struct str_list {
@@ -140,20 +143,16 @@ flag            = {
 	are @emph{not} marked as @code{--shared}.
 	@end table
 
-	The easiest way to change a password is to specify a "pbkdf2" rehash
-        count (with @code{--use-pbkdf2}).  It defaults to 10007. You can
-        determine the current value with the @code{--status} option.
+	The way to change a password is to specify the @code{rehash} count.
+        It defaults to 10007. You can determine the current value with the
+        @code{--status} option.
 
 	Specify only the @code{--tag} and @code{--text} (and maybe
-	@code{--shared}) command line options and the program will insert the
-	new value into the configuration file.  Specify only the tag and no
-	other command line arguments, and the associated seed entry will be
-	removed.  After that, every password id will have a new "most recent"
-	password associated with it.  You are expected to gradually update all
-	of your passwords and retire seed values no longer in use.
-
-	New sites will not need a new seed.  Simply supplying the new
-	@code{<pw-id>} command argument will yield a new password.
+	@code{--shared}) command line options and the program will initialize or
+	insert a new value into the configuration file.  Specify only the tag
+	and no other command line arguments, and the associated seed entry will
+	be removed.  All passwords using that seed will become unavailable.
+        You cannot remove the last seed.
 	_EOF_;
 };
 
@@ -399,6 +398,37 @@ flag = {
 	_EOCode_;
 };
 
+/*
+ * This option conflicts with pbkdf2, so both cannot be on the command line.
+ * If this is on the command line, it will override whatever state pbkdf2
+ * was in. pbkdf2 is now deprecated, but we need to use it because that is how
+ * we have historically stored this information.
+ */
+flag            = {
+    name        = rehash;
+    value       = r;
+    arg-type    = number;
+    arg-range   = '1->100000';
+    descrip     = 'rehash password with PKCS#5 PBKDF2';
+    flags-cant  = pbkdf2;
+    no-preset;
+    flag-code   = "    SET_OPT_PBKDF2(pOptDesc->optArg.argInt);";
+
+    doc = <<- _EOF_
+	By default, passwords are created with the SHA256 hash of the "seed
+        string", the password id and the tag text associated with the seed. If
+        not disabled, the pbkdf2 funcion (with SHA1 as the HMAC function) is
+        used to rehash the result a number of times. By default, this is done
+        10007 times.  This can be over-ridden by disabling pbkdf2 entirely or by
+        specifying a different count. Changing the count will change the
+        password and will mark the entry with the date of the most recent
+        password change.
+
+	Please see RFC 2898 for a specification of the PBKDF2 (Password-Based
+	Key Derivation Function version 2) function.
+	_EOF_;
+};
+
 flag            = {
     name        = pbkdf2;
     disable     = no;
@@ -406,24 +436,14 @@ flag            = {
     enabled;
     arg-type    = number;
     arg-default = 10007;
-    descrip     = 'compute password with PKCS#5 PBKDF2';
+    descrip     = 'rehash password with PKCS#5 PBKDF2';
     settable;
     no-preset;
 
     doc = <<- _EOF_
-	By default, passwords are created by hashing together using the pbkdf2
-	funcion with SHA1 as the HMAC function.  The seed string is passed as
-	the salt data and the password id glued to the tag text for each seed
-	is passed as the password data.  The data are processed 10007 times.
-	This can be over-ridden by disabling pbkdf2 entirely or by specifying
-	a different count.
-
-	This is the normal mechanism by which you should be changing your
-        password. The new count will be stored with a hash key and used the
-        next time the password is needed.
-
-	Please see RFC 2898 for a specification of the PBKDF2 (Password-Based
-	Key Derivation Function version 2) function.
+	This is the deprecated spelling for the -r/--rehash option.
+        This will be marked as not-for-command-line-use with the next
+        release.
 	_EOF_;
 };
 
@@ -504,7 +524,7 @@ flag            = {
     value       = C;
     arg-type    = string;
     no-preset;
-    descrip     = 'print confirmation question answer';
+    descrip     = 'confirmation question answers (see man page)';
     doc = <<- _EOF_
 	Some web sites use "confirmation questions" that, supposedly, only
 	you know the answer to.  Unfortunately, these are often times
@@ -522,7 +542,12 @@ flag            = {
 	consistent answer to these inscrutable questions.
 
 	You will need to update your confirmation question answers when
-	you update your password seed.
+	you update your password seed. However, since that can be highly
+        inconvenient also, this option will print *TWO* results. The first
+        will be dependent on the current password hash, the second will
+        depend *only* on the confirmation question and password id.
+        Consequently, the second one will be stable going forward.
+        The first answer is now deprecated.
 	_EOF_;
 };
 
@@ -660,7 +685,8 @@ detail = <<-  _EOF_
 	Only the passwords for one password id are ever printed.  If the
 	command line contains multiple operands (arguments after the options),
 	then they are assembled into one password id with space characters
-	separating the original operands.
+	separating the original operands. One password is printed for each
+        seed stored in the password configuration file.
 
 	One password is printed for every configured seed value with a
 	matching @code{--shared} option state.  Seed values are added by
@@ -668,7 +694,20 @@ detail = <<-  _EOF_
 	without the @code{--shared} option.  When passwords are printed,
 	the tag is also printed in plain text.
 
+	Passwords are changed by specifying the @code{-r} or @code{--rehash}
+        option with a new numeric value. The day this happens will be noted
+        in the password configuration file and printed in the password header.
+
 	Password ids are never stored anywhere.
+
+	Please be sure to read the "Warnings" section in the full documentation.
+
+	NOTE: the @code{--load-opts} option is supported by the option
+        processing library. This program actually prohibits its usage. The
+        password configuration database is normally found in a standard
+        location. It may be overridden at invocation time by the
+        @code{--config-file} option. Using @code{--load-opts} on the command
+        line will lead to a conflict error.
 	_EOF_;
 
 detail = 'Example usage can be seen in the example section below.';

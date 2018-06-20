@@ -1,7 +1,7 @@
 /*
  *  This file is part of gpw.
  *
- *  Copyright (C) 2013-2017 Bruce Korb, all rights reserved.
+ *  Copyright (C) 2013-2018 Bruce Korb, all rights reserved.
  *  This is free software. It is licensed for use, modification and
  *  redistribution under the terms of the GNU General Public License,
  *  version 3 or later <http://gnu.org/licenses/gpl.html>
@@ -82,6 +82,48 @@ load_file(char const * fname)
 }
 
 /**
+ * load the domain file.
+ * The buffer allocated for it is big enough for all the text,
+ * plus a NUL byte then rounded up to a multiple of 4096.
+ *
+ * @param buf        confirmation string output
+ * @param bsz        output buffer length
+ * @param data       hash data
+ * @param d_len      size of hash data
+ * @param pwd_id_str password id string
+ */
+static void
+set_confirm_value(char * buf, size_t bsz, unsigned char * data, size_t d_len,
+                  char const * pwd_id_str)
+{
+    const int buf_off = CONFIRM_LEN + 1;
+    assert(bsz > (buf_off * 2));
+    base64_encode((char *)data, d_len, buf, buf_off);
+    buf[buf_off - 1] = buf[buf_off] = ' ';
+
+    {
+        union {
+            uintptr_t       data[256 / (NBBY * sizeof(uintptr_t))];
+            unsigned char   sha_buf[256 / NBBY];
+        } sum;
+
+        struct sha256_ctx ctx;
+        sha256_init_ctx(&ctx);
+
+        sha256_process_bytes(pwd_id_str, strlen(pwd_id_str)+1, &ctx);
+        sha256_process_bytes(OPT_ARG(CONFIRM), strlen(OPT_ARG(CONFIRM))+1, &ctx);
+        sha256_finish_ctx(&ctx, sum.sha_buf);
+
+        base64_encode((char *)sum.sha_buf, sizeof(sum.sha_buf),
+                      buf + buf_off+1, bsz - buf_off - 1);
+    }
+
+    buf[buf_off + CONFIRM_LEN + 1] = NUL;
+    fix_lower_only_pw(buf);
+    buf[buf_off - 1] = buf[buf_off] = ' ';
+}
+
+/**
  * Convert the hash data to a password.  Uses base64 encoding, mostly,
  * but atoi for PIN numbers (decimal digits only passwords).
  *
@@ -91,7 +133,8 @@ load_file(char const * fname)
  * @param d_len the length of the raw hash
  */
 static void
-adjust_pw(char * buf, size_t bsz, unsigned char * data, size_t d_len)
+adjust_pw(char * buf, size_t bsz, unsigned char * data, size_t d_len,
+          char const * pwd_id_str)
 {
     char * dta = (char *)data;
     unsigned int cclass = OPT_VALUE_CCLASS
@@ -111,40 +154,31 @@ adjust_pw(char * buf, size_t bsz, unsigned char * data, size_t d_len)
                 (uint32_t)OPT_VALUE_LENGTH, mx);
 
         fix_digit_pw(buf, (uintptr_t *)data);
-        return;
+
+    } else {
+        base64_encode(dta, d_len, buf, bsz);
+        buf[OPT_VALUE_LENGTH] = NUL;
+
+        if (cclass == CCLASS_NO_ALPHA)
+            fix_no_alpha_pw(buf);
+        else
+            fix_std_pw(buf);
     }
-
-    base64_encode(dta, d_len, buf, bsz);
-
-    // Check for confirmation answer password
-    //
-    if (HAVE_OPT(CONFIRM)) {
-        buf[CONFIRM_LEN] = '\0';
-        fix_lower_only_pw(buf);
-        return;
-    }
-
-    buf[OPT_VALUE_LENGTH] = '\0';
-
-    if (cclass == CCLASS_NO_ALPHA)
-        fix_no_alpha_pw(buf);
-    else
-        fix_std_pw(buf);
 }
 
 /**
  * hash and encode the seed tag, the seed and the password id.
  * Use the original glue-the-text-together-and-hash method.
  *
- * @param buf   result buffer
- * @param bsz   buffer size
- * @param tag   the seed tag
- * @param txt   the password seed
- * @param nam   the password id
+ * @param buf          result buffer
+ * @param bsz          buffer size
+ * @param tag          the seed tag
+ * @param txt          the password seed
+ * @param pwd_id_str   the password id
  */
 static void
 get_dft_pw(char * buf, size_t bsz,
-           char const * tag, char const * txt, char const * nam)
+           char const * tag, char const * txt, char const * pwd_id_str)
 {
     union {
         uintptr_t       data[256 / (NBBY * sizeof(uintptr_t))];
@@ -153,14 +187,18 @@ get_dft_pw(char * buf, size_t bsz,
 
     struct sha256_ctx ctx;
     sha256_init_ctx(&ctx);
+
     sha256_process_bytes(tag, strlen(tag)+1, &ctx);
     sha256_process_bytes(txt, strlen(txt)+1, &ctx);
-    sha256_process_bytes(nam, strlen(nam)+1, &ctx);
+    sha256_process_bytes(pwd_id_str, strlen(pwd_id_str)+1, &ctx);
     if (HAVE_OPT(CONFIRM))
         sha256_process_bytes(OPT_ARG(CONFIRM), strlen(OPT_ARG(CONFIRM))+1, &ctx);
     sha256_finish_ctx(&ctx, sum.sha_buf);
 
-    adjust_pw(buf, bsz, sum.sha_buf, sizeof(sum.sha_buf));
+    if (HAVE_OPT(CONFIRM))
+        set_confirm_value(buf, bsz, sum.sha_buf, sizeof(sum.sha_buf), pwd_id_str);
+    else
+        adjust_pw(buf, bsz, sum.sha_buf, sizeof(sum.sha_buf), pwd_id_str);
 }
 
 /**
@@ -175,10 +213,10 @@ get_dft_pw(char * buf, size_t bsz,
  */
 static void
 get_pbkdf2_pw(char * buf, size_t bsz,
-              char const * tag, char const * txt, char const * nam)
+              char const * tag, char const * txt, char const * pwd_id_str)
 {
     size_t tag_len = strlen(tag) + 1;
-    size_t nam_len = strlen(nam) + 1;
+    size_t nam_len = strlen(pwd_id_str) + 1;
     size_t cfm_len = HAVE_OPT(CONFIRM) ? (strlen(OPT_ARG(CONFIRM)) + 1) : 0;
 
     size_t hash_ln = 4 + ((bsz * 6) >> 3);
@@ -188,7 +226,7 @@ get_pbkdf2_pw(char * buf, size_t bsz,
     Gc_rc rc;
 
     memcpy(nam_tag, tag, tag_len);
-    memcpy(nam_tag + tag_len, nam, nam_len);
+    memcpy(nam_tag + tag_len, pwd_id_str, nam_len);
     tag_len += nam_len;
     if (cfm_len > 0) {
         memcpy(nam_tag + tag_len, OPT_ARG(CONFIRM), cfm_len);
@@ -203,80 +241,82 @@ get_pbkdf2_pw(char * buf, size_t bsz,
     if (rc != GC_OK)
         die(GNU_PW_MGR_EXIT_INVALID, pbkdf2_err_fmt, rc);
 
-    adjust_pw(buf, bsz, (unsigned char *)hash_bf, hash_ln);
-}
-
-static void
-print_pwid_header(char const * name)
-{
-    static char const hdr_fmt[]  = "password id '%s'%s:\n";
-    static char const is_sec[]   = " (shared password)";
-    printf(hdr_fmt, name, ENABLED_OPT(SHARED) ? is_sec : "");
+    if (HAVE_OPT(CONFIRM))
+        set_confirm_value(buf, bsz, (unsigned char *)hash_bf, hash_ln, pwd_id_str);
+    else
+        adjust_pw(buf, bsz, (unsigned char *)hash_bf, hash_ln, pwd_id_str);
 }
 
 /**
- * Print the passwords for \a name.
- * @param name  the name/id for which a password is needed
+ * Print a password display header
+ *
+ * @param pwd_id_str  the password id
  */
 static void
-print_pwid_status(char const * name)
+print_pwid_header(char const * pwd_id_str)
 {
-    static char const lstr_fmt[] = "  %-10s %s\n";
-    static char const ldig_fmt[] = "  %-10s %u\n";
-    static char const ldig_dft[] = "  %-10s %u (default)\n";
+    printf(pwid_hdr_fmt, pwd_id_str, ENABLED_OPT(SHARED) ? pwid_shared : "");
+}
 
+/**
+ * Print the passwords for \a pwd_id_str.
+ * @param pwd_id_str  the pwd_id_str/id for which a password is needed
+ */
+static void
+print_pwid_status(char const * pwd_id_str)
+{
     bool have_data = false;
 
     if (HAVE_OPT(LOGIN_ID)) {
         have_data = true;
-        print_pwid_header(name);
-        printf(lstr_fmt, "login-id", OPT_ARG(LOGIN_ID));
+        print_pwid_header(pwd_id_str);
+        printf(pwst_str_fmt, "login-id", OPT_ARG(LOGIN_ID));
     }
 
     if (HAVE_OPT(LENGTH)) {
         if (! have_data) {
-            print_pwid_header(name);
+            print_pwid_header(pwd_id_str);
             have_data = true;
         }
-        printf(ldig_fmt, "length", (unsigned int)OPT_VALUE_LENGTH);
+        printf(pwst_dig_fmt, "length", (unsigned int)OPT_VALUE_LENGTH);
     }
 
     if (HAVE_OPT(PBKDF2) || (OPT_VALUE_LENGTH > (MIN_BUF_LEN - 8))) {
         if (! have_data) {
-            print_pwid_header(name);
+            print_pwid_header(pwd_id_str);
             have_data = true;
         }
         if (ENABLED_OPT(PBKDF2) || (OPT_VALUE_LENGTH > (MIN_BUF_LEN - 8)))
-            printf(ldig_fmt, "pbkdf2 ct", (unsigned int)OPT_VALUE_PBKDF2);
+            printf(pwst_dig_fmt, "pbkdf2 ct", (unsigned int)OPT_VALUE_PBKDF2);
         else
-            printf(lstr_fmt, "pbkdf2", "not used");
+            printf(pwst_str_fmt, "pbkdf2", "not used");
     }
 
     if (HAVE_OPT(SPECIALS)) {
         if (! have_data) {
-            print_pwid_header(name);
+            print_pwid_header(pwd_id_str);
             have_data = true;
         }
-        printf(lstr_fmt, "spec chars", OPT_ARG(SPECIALS));
+        printf(pwst_str_fmt, "spec chars", OPT_ARG(SPECIALS));
     }
 
     if (HAVE_OPT(CCLASS)) {
         char const * names;
 
         if (! have_data) {
-            print_pwid_header(name);
+            print_pwid_header(pwd_id_str);
             have_data = true;
         }
         doOptCclass(OPTPROC_RETURN_VALNAME, &DESC(CCLASS));
         names = DESC(CCLASS).optArg.argString;
-        printf(lstr_fmt, "ch-class", names);
+        printf(pwst_str_fmt, "ch-class", names);
         free((void *)names);
     }
 
     if (! have_data)
-        printf("The %s password id has all default settings\n", name);
+        printf("The %s password id has all default settings\n", pwd_id_str);
     else if (! HAVE_OPT(PBKDF2))
-        printf(ldig_dft, "pbkdf2 ct", (unsigned int)OPT_VALUE_PBKDF2);
+        printf(pwst_dig_dft, "pbkdf2 ct", (unsigned int)OPT_VALUE_PBKDF2);
 }
 
 /**
@@ -316,7 +356,7 @@ select_chars(unsigned char * txtbuf)
 }
 
 static bool
-print_one_pwid(tOptionValue const * seed_opt, char const * name)
+print_one_pwid(tOptionValue const * seed_opt, char const * pwd_id_str)
 {
     if (seed_opt->valType != OPARG_TYPE_HIERARCHY)
         die(GNU_PW_MGR_EXIT_BAD_SEED, bad_seed);
@@ -371,65 +411,58 @@ print_one_pwid(tOptionValue const * seed_opt, char const * name)
 
     if (ENABLED_OPT(PBKDF2) || (OPT_VALUE_LENGTH > (MIN_BUF_LEN - 8)))
         get_pbkdf2_pw((char *)txtbuf, buf_len,
-                      tag->v.strVal, txt->v.strVal, name);
+                      tag->v.strVal, txt->v.strVal, pwd_id_str);
     else
         get_dft_pw((char *)txtbuf, buf_len,
-                   tag->v.strVal, txt->v.strVal, name);
+                   tag->v.strVal, txt->v.strVal, pwd_id_str);
 
     if (HAVE_OPT(SELECT_CHARS))
         select_chars(txtbuf);
-
     printf(pw_fmt, tag->v.strVal, txtbuf);
     return true;
 }
 
 /**
- * Print the passwords for \a name.
- * @param name  the name/id for which a password is needed
+ * Print the passwords for \a pwd_id_str.
+ * @param pwd_id_str  the pwd_id_str/id for which a password is needed
  */
 static void
-print_pwid(char const * name)
+print_pwid(char const * pwd_id_str)
 {
-    char const *    pfx    = "";
     tOptionValue const * ov = optionFindValue(&DESC(SEED), NULL, NULL);
     bool printed_pw = false;
 
-    if (*name == '\0')
+    if (*pwd_id_str == NUL)
         die(GNU_PW_MGR_EXIT_NO_PWID, no_pwid);
 
-    set_pwid_opts(name);
+    set_pwid_opts(pwd_id_str);
     if (HAVE_OPT(STATUS)) {
-        print_pwid_status(name);
+        print_pwid_status(pwd_id_str);
         return;
     }
 
     if (HAVE_OPT(DELETE)) {
-        remove_pwid(name);
+        remove_pwid(pwd_id_str);
         return;
     }
 
     scribble_free();
-
-    if (! HAVE_OPT(LOGIN_ID)) {
-        if (! HAVE_OPT(NO_HEADER))
-            fputs(hdr_str, stdout);
-
-    } else {
-        size_t l = strlen(OPT_ARG(LOGIN_ID));
-        char * t = scribble_get(l + 2);
-        memcpy(t, OPT_ARG(LOGIN_ID), l);
-        t[l++] = ' ';
-        t[l]   = NUL;
-        pfx    = t;
-        if (! HAVE_OPT(NO_HEADER))
-            printf(hdr_hint, pfx);
+    if (! HAVE_OPT(NO_HEADER)) {
+        char const * hdr_type = hdr_normal;
+        if (HAVE_OPT(CONFIRM)) {
+            pbkdf2_date="";
+            hdr_type = hdr_confirm;
+        }
+        if (HAVE_OPT(LOGIN_ID))
+            printf(hdr_hint, OPT_ARG(LOGIN_ID));
+        printf(pw_hdr_fmt, hdr_type, pbkdf2_date);
     }
 
     /*
      * For each <seed> value in the config file, print a password.
      */
     do  {
-        printed_pw |= print_one_pwid(ov, name);
+        printed_pw |= print_one_pwid(ov, pwd_id_str);
         ov = optionFindNextValue(&DESC(SEED), ov, NULL, NULL);
     } while (ov != NULL);
 
@@ -437,7 +470,7 @@ print_pwid(char const * name)
         die(GNU_PW_MGR_EXIT_NO_SEED, no_passwords,
             ENABLED_OPT(SHARED) ? sec_pw_type : "");
 
-    update_pwid_opts(name);
+    update_pwid_opts(pwd_id_str);
 }
 
 /**

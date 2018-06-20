@@ -1,7 +1,7 @@
 /*
  *  This file is part of gpw.
  *
- *  Copyright (C) 2013-2017 Bruce Korb, all rights reserved.
+ *  Copyright (C) 2013-2018 Bruce Korb, all rights reserved.
  *  This is free software. It is licensed for use, modification and
  *  redistribution under the terms of the GNU General Public License,
  *  version 3 or later <http://gnu.org/licenses/gpl.html>
@@ -48,10 +48,114 @@ make_pwid_mark(char const * name, size_t * len)
     txtbuf[MARK_TEXT_LEN] = NUL;
 
     {
-        char * mark = scribble_get(id_mark_fmt_LEN + MARK_TEXT_LEN);
+        static unsigned long const mark_size = id_mark_fmt_LEN + MARK_TEXT_LEN + 10;
+        char * mark = scribble_get(mark_size);
         *len = sprintf(mark, id_mark_fmt, txtbuf);
         return mark;
     }
+}
+
+static char const *
+day_to_string(char const * day_str)
+{
+    static char time_buf[time_fmt_LEN + 4];
+
+    time_t day = strtoul(day_str, NULL, 10) * SECONDS_IN_DAY;
+    struct tm *tmday = localtime(&day);
+    if (tmday == NULL)
+        fserr(GNU_PW_MGR_EXIT_NO_MEM, "localtime", "");
+    strftime(time_buf, sizeof(time_buf), time_fmt, tmday);
+    return time_buf;
+}
+
+/**
+ * Find the next password id option in the config file that is not specified
+ * on the command line. It is a command line option if STATE_OPT(xx) is
+ * OPTST_DEFINED.
+ *
+ * @param scan      current position in config file data
+ * @param mark      the marker for "password id options"
+ * @param mark_len  the length of that marker
+ * @returns the character after the scan marker, or NULL
+ */
+static char const *
+next_pwid_opt(char const * scan, char const * mark, size_t mark_len)
+{
+    char * opt_text;
+
+    for (;;) {
+        scan = strstr(scan, mark);
+        if (scan == NULL)
+            return NULL;
+
+        scan += mark_len;
+        while (isspace((unsigned int)*scan))
+            scan++;
+        opt_text = strchr(scan, '>');
+        if (opt_text == NULL)
+            return NULL;
+        while (isspace((unsigned int)*++opt_text))  ;
+
+        /*
+         * If the found option type is in DEFINED state, then it was set
+         * on the command line and overrides whatever is in the config file.
+         */
+        switch (find_set_opt_cmd(opt_text)) {
+        case SET_CMD_LOGIN_ID:
+            if (STATE_OPT(LOGIN_ID) == OPTST_DEFINED)
+                continue;
+            break;
+
+        case SET_CMD_LENGTH:
+            if (STATE_OPT(LENGTH) == OPTST_DEFINED)
+                continue;
+            break;
+
+        case SET_CMD_CCLASS:
+            break; // always process this option
+
+        case SET_CMD_NO_PBKDF2:
+        case SET_CMD_USE_PBKDF2:
+            if (STATE_OPT(PBKDF2) == OPTST_DEFINED)
+                continue;
+            if (strncmp(scan, date_z, date_z_LEN) == 0)
+                pbkdf2_date = day_to_string(scan + date_z_LEN);
+            else
+                pbkdf2_date = undated_z;
+            break;
+
+        case SET_CMD_SPECIALS:
+            if (STATE_OPT(SPECIALS) == OPTST_DEFINED)
+                continue;
+            break;
+
+        case SET_CMD_SHARED:
+            if (STATE_OPT(SHARED) == OPTST_DEFINED)
+                continue;
+            break;
+
+        case SET_INVALID_CMD:
+        default:
+            goto no_next_pwid_opt;
+        }
+        return opt_text;
+    }
+
+    no_next_pwid_opt:
+    {
+        char * name = scribble_get(strlen(opt_text) + 1);
+        char * end  = name;
+        for (;;) {
+            unsigned char ch = (unsigned char)*(opt_text++);
+            if (! isalnum(ch))
+                break;
+            *(end++) = ch;
+        }
+        *end = NUL;
+        die(GNU_PW_MGR_EXIT_NO_CONFIG, bad_cfg_ent, mark, name);
+        /* NOTREACHED */
+    }
+    return NULL;
 }
 
 /**
@@ -65,7 +169,8 @@ set_pwid_opts(char const * name)
 {
     char const * cfg_text = load_config_file();
 
-    /* Find the marker that separates the seeds from the
+    /*
+     * Find the marker that separates the seeds from the
      * password id options
      */
     char const * scan = strstr(cfg_text, pw_id_tag);
@@ -115,16 +220,33 @@ remove_opt(char const * txt, char const * mark, size_t m_len,
            set_opt_enum_t typ)
 {
     char * buf = (char *)(void *)txt;
+
     for (;;) {
-        char * p = strstr(buf, mark);
+        char * popt = strstr(buf, mark);
+        char * p    = popt;
+
         if (p == NULL)
             return;
 
-        if (find_set_opt_cmd(p + m_len) == typ) {
-            buf = p;
+        /*
+         * The marker may have more than just <pwtag id="..">, so
+         * scan over whatever else and past the closing '>'.
+         */
+        p = strchr(p, '>');
+        if (p == NULL)
+            return;
+
+        /*
+         * Convert the next part into the option type enumeration
+         * and see if it matches the one we're looking for.
+         * Spellings are "allowed" to vary, so it's not just a
+         * strncmp().
+         */
+        if (find_set_opt_cmd(++p) == typ) {
+            buf = popt;
             break;
         }
-        buf = p + m_len;
+        buf = p + id_mark_end_LEN;
     }
     {
         char * next = strstr(buf + m_len, pwtag_z);
@@ -241,7 +363,10 @@ update_pwid_opts(char const * name)
 
         if (STATE_OPT(PBKDF2) == OPTST_DEFINED) {
             char const * how = ENABLED_OPT(PBKDF2) ? "use" : "no";
-            fprintf(fp, pwid_pbkdf2_fmt, mark, how,
+            unsigned int day = (unsigned int)
+                (time(NULL) / SECONDS_IN_DAY);
+
+            fprintf(fp, pwid_pbkdf2_fmt, mark, day, how,
                     (unsigned int)OPT_VALUE_PBKDF2);
         }
 
@@ -305,84 +430,6 @@ remove_pwid(char const * name)
             fclose(fp);
         }
     }
-}
-
-/**
- * Find the next password id option in the config file that is not specified
- * on the command line.
- *
- * @param scan      current position in config file data
- * @param mark      the marker for "password id options"
- * @param mark_len  the length of that marker
- * @returns the character after the scan marker, or NULL
- */
-static char const *
-next_pwid_opt(char const * scan, char const * mark, size_t mark_len)
-{
-    for (;;) {
-        scan = strstr(scan, mark);
-        if (scan == NULL)
-            return NULL;
-
-        scan += mark_len;
-        while (isspace((unsigned int)*scan))  scan++;
-
-        /*
-         * If the found option type is in DEFINED state, then it was set
-         * on the command line and overrides whatever is in the config file.
-         */
-        switch (find_set_opt_cmd(scan)) {
-        case SET_CMD_LOGIN_ID:
-            if (STATE_OPT(LOGIN_ID) == OPTST_DEFINED)
-                continue;
-            break;
-
-        case SET_CMD_LENGTH:
-            if (STATE_OPT(LENGTH) == OPTST_DEFINED)
-                continue;
-            break;
-
-        case SET_CMD_CCLASS:
-            break; // always process this option
-
-        case SET_CMD_NO_PBKDF2:
-        case SET_CMD_USE_PBKDF2:
-            if (STATE_OPT(PBKDF2) == OPTST_DEFINED)
-                continue;
-            break;
-
-        case SET_CMD_SPECIALS:
-            if (STATE_OPT(SPECIALS) == OPTST_DEFINED)
-                continue;
-            break;
-
-        case SET_CMD_SHARED:
-            if (STATE_OPT(SHARED) == OPTST_DEFINED)
-                continue;
-            break;
-
-        case SET_INVALID_CMD:
-        default:
-            goto no_next_pwid_opt;
-        }
-        return scan;
-    }
-
-    no_next_pwid_opt:
-    {
-        char * name = scribble_get(strlen(scan) + 1);
-        char * end  = name;
-        for (;;) {
-            unsigned char ch = (unsigned char)*(scan++);
-            if (! isalnum(ch))
-                break;
-            *(end++) = ch;
-        }
-        *end = NUL;
-        die(GNU_PW_MGR_EXIT_NO_CONFIG, bad_cfg_ent, mark, name);
-        /* NOTREACHED */
-    }
-    return NULL;
 }
 
 /**

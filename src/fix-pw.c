@@ -1,7 +1,7 @@
 /*
  *  This file is part of gpw.
  *
- *  Copyright (C) 2013-2017 Bruce Korb, all rights reserved.
+ *  Copyright (C) 2013-2018 Bruce Korb, all rights reserved.
  *  This is free software. It is licensed for use, modification and
  *  redistribution under the terms of the GNU General Public License,
  *  version 3 or later <http://gnu.org/licenses/gpl.html>
@@ -116,13 +116,19 @@ clean_sequence(char * pw)
         if (isdigit(last[1])) {
             pw[-1] += (last[1] < '5') ? 5 : -5; // rotate digit 5
 
-        } else if (isupper(last[1])) {
-            pw[-1] = tolower(last[1]); // change case
+        } else if (isupper(last[1])) { // shift upper case by 4
+            char ch = last[1] + 4;
+            if (ch > 'Z')
+                ch = 'A' + (ch - 'Z' - 1);
+            pw[-1] = ch;
 
-        } else if (islower(last[1])) {
-            pw[-1] = toupper(last[1]); // change case
+        } else if (islower(last[1])) { // shift lower case by 4
+            char ch = last[1] + 4;
+            if (ch > 'z')
+                ch = 'a' + (ch - 'z' - 1);
+            pw[-1] = ch;
 
-        } else {
+        } else { // select alternate special char
             /*
              * We have three chars in a row with the middle one a special.
              * Pick another of the three special chars.

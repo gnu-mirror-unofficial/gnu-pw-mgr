@@ -2,7 +2,7 @@
 
 #  This file is part of gnu-pw-mgr.
 #
-#  Copyright (C) 2013-2017 Bruce Korb - all rights reserved
+#  Copyright (C) 2013-2018 Bruce Korb - all rights reserved
 #
 #  gnu-pw-mgr is free software: you can redistribute it and/or modify it
 #  under the terms of the GNU General Public License as published by the
@@ -48,18 +48,22 @@ run_test() {
         die $'results differ\n'"$samp became $f"
     ck_test 'TEST ONLY TAG' "login-id  = 'test-tag'"
 
-    samp='xkzrraogchyh'
+    # Confirmation question test
+    #
+    samp='xkzrraogchyh jfiscesagqka'
     f=`$gpw --confirm dog who | \
-        awk '/TEST ONLY TAG/{print $4}'`
+        awk '/TEST ONLY TAG/{print $4 " " $5}'`
     test "X$f" = "X$samp" || \
-        die $'results for "--confirm dog" differ\n'"$samp became $f"
+        die $'results for "--confirm dog" differ\n'"'$samp' became '$f'"
 
-    samp='brrxsbesatfj'
+    samp='brrxsbesatfj uvflfqdrjepf'
     f=`$gpw --confirm pet who | \
-        awk '/TEST ONLY TAG/{print $4}'`
+        awk '/TEST ONLY TAG/{print $4 " " $5}'`
     test "X$f" = "X$samp" || \
         die $'results for "--confirm pet" differ\n'"$samp became $f"
 
+    # Triplet fixup test
+    #
     trial='try 98'
     samp='MYjChXuWGsJZ7n1PWbZmOC6KKK/fFCcGc29imK/o'
     f=`$gpw --no-pbkdf2 -l40 $trial | awk '/KKK/{print $4}'`
@@ -71,18 +75,30 @@ run_test() {
     test "X$f" = "X$samp" || \
         die "wrong tweaked password found"
 
-    f=`$gpw --use-pbkdf2 31 $trial | awk '/TEST ONLY/{print $4}'`
-    test "X$f" = "Xdg/ztcP/3ioA5bOqYiv56/+e3G0eLnM72msZH+iC" || \
-        die "PBKDF2 inconsistency"
-
+    # selective chars fixup test
+    # test "X$f" = "X${samp:23:1}${samp:15:1}${samp:7:1}${samp:2:1}" 
+    #
     f=`$gpw --sel=24,16,8,3 $trial | awk '/TEST ONLY/{print $4}'`
-    test "X$f" = "Xeq//" || \
+    test "X$f" = "XKPWj" || \
         die "selection inconsistency"
 
     samp=lMZ0FiVY
     f=`$gpw --cc=two-digit $trial 2 | awk '/TEST ONLY/{print $4}'`
     test "X$f" = "X$samp" && \
         die "requiring two digits failed"
+
+    # Sequential fixup test
+    #
+    trial='XX try 10185'
+    samp='3AOS5o5011OuzGYlFrLI4B2FGHopslkngfRTdIHi'
+    f=`$gpw -l40 --cc=no-spec $trial | awk '/TEST ONLY/{print $4}'`
+    test "X$f" = "X$samp" || \
+        die "PBKDF2 inconsistency"
+
+    samp=$(echo $samp | sed 's/FGH/FKH/')
+    f=`$gpw --cc=no-spec+no-seq $trial | awk '/TEST ONLY/{print $4}'`
+    test "X$f" = "X$samp" || \
+        die "PBKDF2 inconsistency"
 
     $gpw -t 'TEST ONLY TAG'
     test -f "${cfgfile}" || \

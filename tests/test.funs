@@ -2,7 +2,7 @@
 
 #  This file is part of gnu-pw-mgr.
 #
-#  Copyright (C) 2013-2017 Bruce Korb - all rights reserved
+#  Copyright (C) 2013-2018 Bruce Korb - all rights reserved
 #
 #  gnu-pw-mgr is free software: you can redistribute it and/or modify it
 #  under the terms of the GNU General Public License as published by the
@@ -35,6 +35,7 @@ init_test() {
     PS4='>$FUNCNAME> '
     base_test_name=${testname%.test}
     PATH=`cd ../src && pwd`:${PATH}
+    rm -rf ${TMPDIR:-/tmp}/gpw-??????/
     TEST_HOME=`mktemp -d ${TMPDIR:-/tmp}/gpw-XXXXXX` || {
         TEST_HOME=${TMPDIR:-/tmp}/gpw-$$
         mkdir ${TEST_HOME} || die "cannot make $TEST_HOME directory"

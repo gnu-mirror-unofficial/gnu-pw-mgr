@@ -85,9 +85,14 @@ grep '^exit-' ${srcdir}/opts.def
 #endshell
 
 detail = <<-  _EOF_
+
 	This program will sort (and merge) the per-domain password attributes.
-	If there are duplicate entries, the last entry seen will survive.
-	The result will be sorted by password id hash code and option name.
+	If there are duplicate entries, the last entry seen will survive.  The
+	result will be sorted by password id hash code and option name.  Thus,
+	any file containing more recent entries should appear last.  If you have
+	updated two different password ids in two different password
+	configuration files without having merged them, you may have a merge
+	problem. You will need to try to remember what you did.
 
 	The "header" portion of the config file (the seeds and the
 	<program...> marker) are taken from the first config file listed
