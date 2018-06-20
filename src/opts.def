@@ -35,7 +35,7 @@ version         = `tv=../.tarball-version
  */
 
 copyright = {
-    date  = "2013-2016";
+    date  = "2013-2018";
     owner = "Bruce Korb";
     eaddr = 'bkorb@gnu.org';
     type  = gpl;
@@ -209,8 +209,9 @@ flag            = {
         The original expectation was that passwords would be updated on an
         occasional basis. Now that I have over 100 login credentials, it is
         clearly infeasible to go around and update them all. Instead, I have
-        to decide which are important to update and use the @code{--use-pbkdf2}
-        option to change the rehash count.
+        to decide which are important to update and use the @code{--rehash}
+        option to change the rehash count. The date of the last rehash
+	count change is recorded with the password id options.
 	_EOF_;
 };
 
@@ -293,19 +294,13 @@ flag            = {
     no-preset;
 
     doc = <<- _EOF_
-	Some web sites are more restrictive.  Some are more generous.  Set
-	this value in your home config file to change your default and specify
-	it on the command line for specific sites.  Use of this option requires
-	a @code{<pw-id>} operand.
+	Some web sites are more restrictive.  Some are more generous.
+	Use of this option requires a @code{<pw-id>} operand.
 
 	Password lengths of 4 through 7 characters are limited to "pin" numbers.
 	"pin" numbers are 4 or more digits.  All other passwords must be at
 	least 8 characters long.  The default length is 16.  Use at least 24,
 	if you can.
-
-	Password lengths beyond 40 characters force the use of the pbkdf2
-	algorithm.  i.e.  @code{--no-pbkdf2} is ignored.
-	This limit is derived from "MIN_BUF_LEN - 8".
 	_EOF_;
 };
 
@@ -412,17 +407,30 @@ flag            = {
     descrip     = 'rehash password with PKCS#5 PBKDF2';
     flags-cant  = pbkdf2;
     no-preset;
-    flag-code   = "    SET_OPT_PBKDF2(pOptDesc->optArg.argInt);";
+    flag-code   = <<- _EOcode_
+
+	\    if (STATE_OPT(PBKDF2) != OPTST_DEFINED) {
+	\        tOptDesc * pbkdf = &DESC(PBKDF2);
+	\        SET_OPT_PBKDF2(pOptDesc->optArg.argString);
+	\        CLEAR_OPT(REHASH);
+	\        pOptDesc->optArg.argInt = pbkdf->optArg.argInt;
+
+	\        // Obliterate this option.
+	\        //
+	\        pOptDesc->fOptState = (OPTST_OMITTED | OPTST_NO_INIT);
+	\        pOptDesc = pbkdf;
+	\    } else
+
+	_EOcode_;
 
     doc = <<- _EOF_
 	By default, passwords are created with the SHA256 hash of the "seed
         string", the password id and the tag text associated with the seed. If
         not disabled, the pbkdf2 funcion (with SHA1 as the HMAC function) is
         used to rehash the result a number of times. By default, this is done
-        10007 times.  This can be over-ridden by disabling pbkdf2 entirely or by
-        specifying a different count. Changing the count will change the
-        password and will mark the entry with the date of the most recent
-        password change.
+        10007 times.  This can be over-ridden by specifying a different count.
+	Changing the count will change the password and will mark the entry
+	with the date of the most recent password change.
 
 	Please see RFC 2898 for a specification of the PBKDF2 (Password-Based
 	Key Derivation Function version 2) function.
@@ -493,6 +501,11 @@ flag            = {
     descrip     = 'omit printing the password headers';
     doc = <<- _EOF_
 	By default, the output includes column headers.
+	For confirmation output, the two values will have column labels,
+	and for password output, it will contain any login hint and the
+	date the last time the @code{--rehash} count was changed.
+	(Password was changed.)
+
 	Suppressing it is intended for automated logins.
 	The login name hint will not be provided, but the
 	@code{tag} is printed.
@@ -513,9 +526,6 @@ flag            = {
 	"2,10,16" as the option argument.  The characters to select are
 	space or comma separated values.  The result cannot be longer than
 	the original password.
-
-	Disabling this option conflicts with adding new password seeds.
-	Using this option at all conflicts with removing password seeds.
 	_EOF_;
 };
 
@@ -619,7 +629,8 @@ flag            = {
 	seed files, use this option. It must be specified on the
         command line every time it is needed. You are responsible to
         ensure that the directory already exists. The file will be
-        left read-only when gnu-pw-mgr exits.
+        left read-only when gnu-pw-mgr exits. The containing directory
+	permissions will not be checked or altered.
 	_EOF_;
 };
 
@@ -675,6 +686,7 @@ exit-name[16] = coding-error;
 exit-desc[16] = 'There is a coding error that should be reported';
 
 detail = <<-  _EOF_
+
 	The password id should contain a fairly consistent permutation of the
 	URL you are logging in to.  "Fairly" because you may wish to vary your
 	financial institutions differently than your newspaper, or you may

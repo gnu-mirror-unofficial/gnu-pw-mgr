@@ -175,7 +175,7 @@ add_seed(void)
     FILE * fp;
 
     {
-        char * tag = scribble_get(sizeof (tag_fmt) + strlen(OPT_ARG(TAG)));
+        char * tag = scribble_get(tag_fmt_LEN + strlen(OPT_ARG(TAG)));
         sprintf(tag, tag_fmt, OPT_ARG(TAG));
         if (strstr(cfg_text, tag) != NULL)
             die(GNU_PW_MGR_EXIT_BAD_SEED, dup_tag, OPT_ARG(TAG));

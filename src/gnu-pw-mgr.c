@@ -153,7 +153,7 @@ adjust_pw(char * buf, size_t bsz, unsigned char * data, size_t d_len,
             die(GNU_PW_MGR_EXIT_INVALID, pin_too_big,
                 (uint32_t)OPT_VALUE_LENGTH, mx);
 
-        fix_digit_pw(buf, (uintptr_t *)data);
+        fix_digit_pw(buf, (uintptr_t *)(uintptr_t)data);
 
     } else {
         base64_encode(dta, d_len, buf, bsz);

@@ -494,9 +494,9 @@ create_cfg_file(char * opt, char * opt1)
     if (stat(opt, &sb) == 0)
         return;
 
-    fno = creat(opt, O_WRONLY);
+    fno = open(opt, O_CREAT|O_WRONLY, S_IRWXU);
     if (fno < 0)
-        fserr(GNU_PW_MGR_EXIT_INVALID, "creat", opt);
+        fserr(GNU_PW_MGR_EXIT_INVALID, "open(O_CREAT)", opt);
 
     if (fchmod(fno, S_IRUSR | S_IWUSR) != 0)
         fserr(GNU_PW_MGR_EXIT_INVALID, "chmod", opt);

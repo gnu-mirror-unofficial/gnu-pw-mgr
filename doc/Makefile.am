@@ -36,17 +36,23 @@ check_exe   = test -x $(top_builddir)/src/$(1) || \
 	{ cd $(top_builddir)/src ; $(MAKE) $(1) ; }
 
 gen_invoke  = PATH="$(top_builddir)/src:$${PATH}" \
-    top_srcdir="$(top_srcdir)" \
-    autogen -DLEVEL=chapter -MF$@ -b $(1) -T agtexi-cmd.tpl \
-	$(top_srcdir)/src/$(2) ; \
-    test -f $@
+    ag=`command -v autogen` ; \
+    if test -x "$$ag" ; then \
+        top_srcdir="$(top_srcdir)" \
+        $$ag -DLEVEL=chapter -MF$@ -b $(1) -T agtexi-cmd.tpl \
+	    $(top_srcdir)/src/$(2) ; \
+        test -f $@ ; \
+    else touch $@ ; fi
 
 gen_man     = \
-    top_srcdir="$(top_srcdir)" \
-    autogen -MF$@ -b $(1) -T agman-cmd.tpl \
-	$(top_srcdir)/src/$(2) ; \
+    ag=`command -v autogen` ; \
+    if test -x "$$ag" ; then \
+        top_srcdir="$(top_srcdir)" \
+        $$ag -MF$@ -b $(1) -T agman-cmd.tpl \
+	    $(top_srcdir)/src/$(2) ; \
 	sed -i 's/- Fl /-/;s/ Fl /\\-/;s/I-Font\]\\-\\-/B-Font]\\-\\-/' $(1).1 ; \
-	touch $@
+    fi ; \
+    touch $@
 
 all : $(DEP_FILES)
 

@@ -41,8 +41,8 @@ access_config_file(void)
     if (stat(config_file_name, &sbf) != 0)
         die(GNU_PW_MGR_EXIT_NO_CONFIG, cannot_stat_cfg, config_file_name);
     if ((sbf.st_mode & secure_mask) != 0)
-        die(GNU_PW_MGR_EXIT_NO_CONFIG_INPUT, inv_cfg_perms,
-            (unsigned int)(sbf.st_mode & secure_mask));
+        die(GNU_PW_MGR_EXIT_PERM, inv_cfg_perms, config_file_name,
+            (unsigned int)(sbf.st_mode & 0777));
 
     config_file_size = sbf.st_size;
 
@@ -225,7 +225,8 @@ set_cfg_dir(bool * have_local)
         *have_local = true;
 
         if ((sbf.st_mode & secure_mask) != 0)
-            die(GNU_PW_MGR_EXIT_PERM, cfg_insecure, fname);
+            die(GNU_PW_MGR_EXIT_PERM, inv_cfg_perms, fname,
+                (unsigned int)(sbf.st_mode & 0777));
 
         fname_len += local_dir_LEN;
         fname[fname_len++] = '/';
@@ -279,7 +280,8 @@ find_cfg_name(void)
             chmod(fname, S_IRUSR | S_IWUSR);
 
         } else if ((sbf.st_mode & secure_mask) != 0)
-            die(GNU_PW_MGR_EXIT_PERM, cfg_insecure, fname);
+            die(GNU_PW_MGR_EXIT_PERM, inv_cfg_perms, fname,
+                (unsigned int)(sbf.st_mode & 0777));
     }
 
     set_config_name(fname);

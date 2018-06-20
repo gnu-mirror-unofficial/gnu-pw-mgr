@@ -84,7 +84,7 @@ string = { nm = home_cfg;        str = ".gnupwmgrrc"; };
 string = { nm = home_dom;        str = ".gnupwmgrdom"; };
 string = { nm = id_mark_end;     str = "</pwtag>"; };
 string = { nm = id_mark_fmt;     str = "<pwtag id=\"%s\""; };
-string = { nm = inv_cfg_perms;   str = "invalid config file perms: %o\n"; };
+string = { nm = inv_cfg_perms;   str = "invalid config file permissions for %s: 0%o\n"; };
 string = { nm = inv_pwd;         str = "invalid password generated\n"; };
 string = { nm = load_opts;       str = "--load-opts"; };
 string = { nm = local_cfg;       str = "gnupwmgr.cfg"; };

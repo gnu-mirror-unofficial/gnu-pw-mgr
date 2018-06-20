@@ -1,25 +1,22 @@
+New in 2.2 - June, 2018
+
+* Chase Bank has added the password restriction that no three characters
+  may be in sequence. So look for that and fix it, if need be.
+
+* Let people know when they last modified a password.
+  Mark the day when the pbkdf2 count is modified.
+
+* The confirmation value printed out is a hash based on the confirmation
+  string and the current password. So, if the password changes, then
+  so does the confirmation string. Not ideal. This change restricts
+  the hashing source to just the password id and the confirmation
+  string.
+
+* Users may now specify a config file other than the default.
+
 New in 2.0 - May, 2016
 
 * A new option --shared to implement sharing passwords.
   This allows shared logins with secure passwords and still
   keeps all the other passwords very secret.  See the docs for
   the rationale and usage.
-
-New in 1.6 - October, 2015
-
-* A fix for security questions.  They are too hard to remember,
-  consistent from web site to web site.  A "--confirm" option
-  has been added to provide secure, site unique answers to
-  these questions.
-
-New in 1.5 - August, 2015
-
-* PIN number passwords got broken somewhere along the line.
-  Nobody much uses tham.  (A good thing.)
-
-New in 1.4 - April, 2015
-
-* sort-pw-cfg: a sort/merge program for combining and organizing
-  configurations.
-
-* --delete: a new option to remove any entries for a password id
