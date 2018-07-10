@@ -41,8 +41,8 @@ run_test() {
         die "config file not created:  ${TEST_HOME}/.local/gnupwmgr.cfg"
     ck_test 'TEST ONLY TAG'
 
-    samp='D/BvzGv2LcqJ35gk'
-    f=`$gpw --no-pbkdf2 -i 'test-tag' who | \
+    samp='JvyFIc2bRvUPRDCK'
+    f=`$gpw --rehash=1 -i 'test-tag' who | \
         awk '/TEST ONLY TAG/{print $4}'`
     test "X$f" = "X$samp" || \
         die $'results differ\n'"$samp became $f"
@@ -50,13 +50,13 @@ run_test() {
 
     # Confirmation question test
     #
-    samp='xkzrraogchyh jfiscesagqka'
+    samp='acvrtafnqwmf jfiscesagqka'
     f=`$gpw --confirm dog who | \
         awk '/TEST ONLY TAG/{print $4 " " $5}'`
     test "X$f" = "X$samp" || \
         die $'results for "--confirm dog" differ\n'"'$samp' became '$f'"
 
-    samp='brrxsbesatfj uvflfqdrjepf'
+    samp='pihehbdnfnlf uvflfqdrjepf'
     f=`$gpw --confirm pet who | \
         awk '/TEST ONLY TAG/{print $4 " " $5}'`
     test "X$f" = "X$samp" || \
@@ -64,14 +64,14 @@ run_test() {
 
     # Triplet fixup test
     #
-    trial='try 98'
-    samp='MYjChXuWGsJZ7n1PWbZmOC6KKK/fFCcGc29imK/o'
-    f=`$gpw --no-pbkdf2 -l40 $trial | awk '/KKK/{print $4}'`
+    trial='try 85'
+    samp='2Tjzv7jAvnZf2J5eaEoIFLn+8E3UNGPmGJ0uuu3K'
+    f=`$gpw --rehash=1 -l40 $trial | awk '/uuu/{print $4}'`
     test "X$f" = "X$samp" || \
         die "wrong password found"
 
-    samp=`echo "$samp" | sed 's/KKK/KKL/'`
-    f=`$gpw --cclass no-trip $trial | awk '/KKL/{print $4}'`
+    samp=`echo "$samp" | sed 's/uuu/uuv/'`
+    f=`$gpw --cclass no-trip $trial | awk '/uuv/{print $4}'`
     test "X$f" = "X$samp" || \
         die "wrong tweaked password found"
 
@@ -79,7 +79,7 @@ run_test() {
     # test "X$f" = "X${samp:23:1}${samp:15:1}${samp:7:1}${samp:2:1}" 
     #
     f=`$gpw --sel=24,16,8,3 $trial | awk '/TEST ONLY/{print $4}'`
-    test "X$f" = "XKPWj" || \
+    test "X$f" = "X+eAj" || \
         die "selection inconsistency"
 
     samp=lMZ0FiVY

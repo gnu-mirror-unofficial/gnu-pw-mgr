@@ -80,7 +80,7 @@ export[2] =<<-_EOF_
 	static char const * config_file_name    = NULL;
 	static size_t       config_file_size    = 0;
 	static uintptr_t    post_cfg_setting    = 0UL;
-	static char const * pbkdf2_date         = undated_z;
+	static char const * pbkdf2_date         = pw_undated;
 
 	typedef struct str_list str_list_t;
 	struct str_list {
@@ -411,9 +411,8 @@ flag            = {
 
 	\    if (STATE_OPT(PBKDF2) != OPTST_DEFINED) {
 	\        tOptDesc * pbkdf = &DESC(PBKDF2);
-	\        SET_OPT_PBKDF2(pOptDesc->optArg.argString);
+	\        SET_OPT_PBKDF2(pOptDesc->optArg.argInt);
 	\        CLEAR_OPT(REHASH);
-	\        pOptDesc->optArg.argInt = pbkdf->optArg.argInt;
 
 	\        // Obliterate this option.
 	\        //
@@ -447,11 +446,10 @@ flag            = {
     descrip     = 'rehash password with PKCS#5 PBKDF2';
     settable;
     no-preset;
+    no-command;
 
     doc = <<- _EOF_
 	This is the deprecated spelling for the -r/--rehash option.
-        This will be marked as not-for-command-line-use with the next
-        release.
 	_EOF_;
 };
 
