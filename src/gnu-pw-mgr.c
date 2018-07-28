@@ -409,12 +409,16 @@ print_one_pwid(tOptionValue const * seed_opt, char const * pwd_id_str)
         ? OPT_VALUE_LENGTH + 16 : MIN_BUF_LEN;
     unsigned char * txtbuf = scribble_get(buf_len);
 
-    if (ENABLED_OPT(PBKDF2) || (OPT_VALUE_LENGTH > (MIN_BUF_LEN - 8)))
-        get_pbkdf2_pw((char *)txtbuf, buf_len,
-                      tag->v.strVal, txt->v.strVal, pwd_id_str);
-    else
+    if (  (OPT_VALUE_PBKDF2 == 0)
+       || ! ENABLED_OPT(PBKDF2)
+       || (OPT_VALUE_LENGTH <= (MIN_BUF_LEN - 8)) )
+
         get_dft_pw((char *)txtbuf, buf_len,
                    tag->v.strVal, txt->v.strVal, pwd_id_str);
+
+    else
+        get_pbkdf2_pw((char *)txtbuf, buf_len,
+                      tag->v.strVal, txt->v.strVal, pwd_id_str);
 
     if (HAVE_OPT(SELECT_CHARS))
         select_chars(txtbuf);
