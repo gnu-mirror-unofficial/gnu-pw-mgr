@@ -393,12 +393,6 @@ flag = {
 	_EOCode_;
 };
 
-/*
- * This option conflicts with pbkdf2, so both cannot be on the command line.
- * If this is on the command line, it will override whatever state pbkdf2
- * was in. pbkdf2 is now deprecated, but we need to use it because that is how
- * we have historically stored this information.
- */
 flag            = {
     name        = rehash;
     value       = r;
@@ -407,20 +401,6 @@ flag            = {
     descrip     = 'rehash password with PKCS#5 PBKDF2';
     flags-cant  = pbkdf2;
     no-preset;
-    flag-code   = <<- _EOcode_
-
-	\    if (STATE_OPT(PBKDF2) != OPTST_DEFINED) {
-	\        tOptDesc * pbkdf = &DESC(PBKDF2);
-	\        SET_OPT_PBKDF2(pOptDesc->optArg.argInt);
-	\        CLEAR_OPT(REHASH);
-
-	\        // Obliterate this option.
-	\        //
-	\        pOptDesc->fOptState = (OPTST_OMITTED | OPTST_NO_INIT);
-	\        pOptDesc = pbkdf;
-	\    } else
-
-	_EOcode_;
 
     doc = <<- _EOF_
 	By default, passwords are created with the SHA256 hash of the "seed

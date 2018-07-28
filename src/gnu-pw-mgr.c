@@ -1,5 +1,5 @@
 /*
- *  This file is part of gpw.
+ *  This file is part of gnu-pw-mgr.
  *
  *  Copyright (C) 2013-2018 Bruce Korb, all rights reserved.
  *  This is free software. It is licensed for use, modification and
@@ -208,43 +208,46 @@ get_dft_pw(char * buf, size_t bsz,
  * @param buf   result buffer
  * @param bsz   buffer size
  * @param tag   the seed tag
- * @param txt   the password seed
+ * @param salt  the password seed/salt
  * @param nam   the password id
  */
 static void
 get_pbkdf2_pw(char * buf, size_t bsz,
-              char const * tag, char const * txt, char const * pwd_id_str)
+              char const * tag, char const * salt, char const * pwd_id_str)
 {
-    size_t tag_len = strlen(tag) + 1;
-    size_t nam_len = strlen(pwd_id_str) + 1;
-    size_t cfm_len = HAVE_OPT(CONFIRM) ? (strlen(OPT_ARG(CONFIRM)) + 1) : 0;
+    size_t const stag_len = strlen(tag) + 1;  // seed tag len
+    size_t const salt_len = strlen(salt) + 1; // salt length
+    size_t const pwid_len = strlen(pwd_id_str) + 1;
+    size_t const conf_len =
+	HAVE_OPT(CONFIRM) ? (strlen(OPT_ARG(CONFIRM)) + 1) : 0;
+    
+    size_t const hash_src_len = stag_len + pwid_len + conf_len;
+    size_t const hash_out_len = 4 + ((bsz * 6) >> 3);
 
-    size_t hash_ln = 4 + ((bsz * 6) >> 3);
-
-    char * nam_tag = scribble_get(tag_len + nam_len + cfm_len);
-    char * hash_bf = scribble_get(hash_ln);
+    char * hash_source = scribble_get(hash_src_len);
+    char * hash_output = scribble_get(hash_out_len);
     Gc_rc rc;
 
-    memcpy(nam_tag, tag, tag_len);
-    memcpy(nam_tag + tag_len, pwd_id_str, nam_len);
-    tag_len += nam_len;
-    if (cfm_len > 0) {
-        memcpy(nam_tag + tag_len, OPT_ARG(CONFIRM), cfm_len);
-        tag_len += cfm_len;
-    }
+    memcpy(hash_source, tag, stag_len);
+    memcpy(hash_source + stag_len, pwd_id_str, pwid_len);
+
+    if (conf_len > 0)
+        memcpy(hash_source + stag_len + pwid_len, OPT_ARG(CONFIRM), conf_len);
 
     rc = gc_pbkdf2_sha1(
-        nam_tag, tag_len,
-        txt, strlen(txt) + 1,
+        hash_source, hash_src_len,
+        salt,        salt_len,
         OPT_VALUE_PBKDF2,
-        hash_bf, hash_ln);
+        hash_output, hash_out_len);
     if (rc != GC_OK)
         die(GNU_PW_MGR_EXIT_INVALID, pbkdf2_err_fmt, rc);
 
     if (HAVE_OPT(CONFIRM))
-        set_confirm_value(buf, bsz, (unsigned char *)hash_bf, hash_ln, pwd_id_str);
+        set_confirm_value(buf, bsz, (unsigned char *)hash_output,
+			  hash_out_len, pwd_id_str);
     else
-        adjust_pw(buf, bsz, (unsigned char *)hash_bf, hash_ln, pwd_id_str);
+        adjust_pw(buf, bsz, (unsigned char *)hash_output,
+		  hash_out_len, pwd_id_str);
 }
 
 /**
@@ -409,12 +412,16 @@ print_one_pwid(tOptionValue const * seed_opt, char const * pwd_id_str)
         ? OPT_VALUE_LENGTH + 16 : MIN_BUF_LEN;
     unsigned char * txtbuf = scribble_get(buf_len);
 
-    if (ENABLED_OPT(PBKDF2) || (OPT_VALUE_LENGTH > (MIN_BUF_LEN - 8)))
-        get_pbkdf2_pw((char *)txtbuf, buf_len,
-                      tag->v.strVal, txt->v.strVal, pwd_id_str);
-    else
+    if (  (OPT_VALUE_PBKDF2 == 0)
+       || ! ENABLED_OPT(PBKDF2)
+       || (OPT_VALUE_LENGTH > (MIN_BUF_LEN - 8)) )
+
         get_dft_pw((char *)txtbuf, buf_len,
                    tag->v.strVal, txt->v.strVal, pwd_id_str);
+
+    else
+        get_pbkdf2_pw((char *)txtbuf, buf_len,
+                      tag->v.strVal, txt->v.strVal, pwd_id_str);
 
     if (HAVE_OPT(SELECT_CHARS))
         select_chars(txtbuf);

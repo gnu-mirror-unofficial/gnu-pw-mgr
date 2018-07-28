@@ -20,7 +20,7 @@ bin_PROGRAMS 	       = gnu-pw-mgr sort-pw-cfg
 gnu_pw_mgr_SOURCES     = gnu-pw-mgr.c
 gnu_pw_mgr_CPPFLAGS    = $(incs)
 gnu_pw_mgr_LDADD       = $(top_builddir)/libopts/libopts.la \
-	$(top_builddir)/lib/libgnu.la
+	$(top_builddir)/lib/libgnu.la $(LIB_CRYPTO)
 
 sort_pw_cfg_SOURCES    = sort-pw-cfg.c
 sort_pw_cfg_CPPFLAGS   = $(incs)
@@ -35,7 +35,7 @@ xtra_src        = <<<variable>>>
 opts_src     	= opts.c opts.h
 opt_src      	= set-opt.c set-opt.h
 sort_opts_src   = sort-opts.c sort-opts.h
-scrib_src    	= scribble.c scribble.h
+scrib_src    	= scribble.c
 str_src         = gpw-str.c gpw-str.h
 gen_src      	= $(opts_src) $(opt_src) $(sort_opts_src) $(scrib_src) $(str_src)
 EXTRA_DIST   	= $(gen_src) opts.def sort-opts.def gpw-str.def $(xtra_src)

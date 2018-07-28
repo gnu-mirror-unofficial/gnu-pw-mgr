@@ -32,7 +32,7 @@ cleanup() {
 }
 
 init_test() {
-    PS4='>$FUNCNAME> '
+    PS4='+T=${FUNCTION:-=}-$LINENO> '
     base_test_name=${testname%.test}
     PATH=`cd ../src && pwd`:${PATH}
     rm -rf ${TMPDIR:-/tmp}/gpw-??????/

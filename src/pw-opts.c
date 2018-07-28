@@ -48,7 +48,8 @@ make_pwid_mark(char const * name, size_t * len)
     txtbuf[MARK_TEXT_LEN] = NUL;
 
     {
-        static unsigned long const mark_size = id_mark_fmt_LEN + MARK_TEXT_LEN + 10;
+        static unsigned long const mark_size =
+	    id_mark_fmt_LEN + MARK_TEXT_LEN + 10;
         char * mark = scribble_get(mark_size);
         *len = sprintf(mark, id_mark_fmt, txtbuf);
         return mark;
@@ -116,14 +117,11 @@ next_pwid_opt(char const * scan, char const * mark, size_t mark_len)
 
         case SET_CMD_NO_PBKDF2:
         case SET_CMD_USE_PBKDF2:
-            if (  (STATE_OPT(PBKDF2) == OPTST_DEFINED)
-               || (STATE_OPT(PBKDF2) == OPTST_SET))
+            if (HAVE_OPT(REHASH))
+		continue;
 
-                pbkdf2_date = pw_today;
-
-            else if (strncmp(scan, date_z, date_z_LEN) == 0)
+            if (strncmp(scan, date_z, date_z_LEN) == 0)
                 pbkdf2_date = day_to_string(scan + date_z_LEN);
-
             else
                 pbkdf2_date = pw_undated;
             break;
@@ -178,6 +176,11 @@ set_pwid_opts(char const * name)
      * password id options
      */
     char const * scan = strstr(cfg_text, pw_id_tag);
+
+    if (HAVE_OPT(REHASH)) {
+	pbkdf2_date = pw_today;
+	OPT_VALUE_PBKDF2 = OPT_VALUE_REHASH;
+    }
 
     if (scan != NULL) {
         size_t mark_len;
@@ -287,9 +290,7 @@ removed_old_opts(char const * cfg_text, char const * name, char ** mark_p)
         res = true;
         remove_opt(cfg_text, mark, mark_len, SET_CMD_CCLASS);
     }
-
-    if (  (STATE_OPT(PBKDF2) == OPTST_DEFINED)
-       || (STATE_OPT(PBKDF2) == OPTST_SET)) {
+    if (HAVE_OPT(REHASH)) {
         res = true;
         remove_opt(cfg_text, mark, mark_len, SET_CMD_NO_PBKDF2);
         remove_opt(cfg_text, mark, mark_len, SET_CMD_USE_PBKDF2);
@@ -366,13 +367,12 @@ update_pwid_opts(char const * name)
             od->optArg.argString = save;
         }
 
-        if (  (STATE_OPT(PBKDF2) == OPTST_DEFINED)
-           || (STATE_OPT(PBKDF2) == OPTST_SET)) {
+	if (HAVE_OPT(REHASH)) {
             unsigned int day = (unsigned int)
                 (time(NULL) / SECONDS_IN_DAY);
 
             fprintf(fp, pwid_pbkdf2_fmt, mark, day,
-                    (unsigned int)OPT_VALUE_PBKDF2);
+		    (uint32_t)OPT_VALUE_REHASH);
         }
 
         if (STATE_OPT(SPECIALS) == OPTST_DEFINED)
