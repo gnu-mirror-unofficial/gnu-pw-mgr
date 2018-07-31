@@ -16,11 +16,11 @@
 #  You should have received a copy of the GNU General Public License along
 #  with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-ACLOCAL_AMFLAGS     = -I m4 -I libopts/m4 -I gnulib/m4
+ACLOCAL_AMFLAGS     = -I m4
 SUBDIRS             = lib libopts src doc tests
 DIST_SUBDIRS        = $(SUBDIRS)
 LIBTOOLIZE_ARGS	    = --copy --force
 AUTOMAKE_ARGS  	    = --add-missing --copy
 EXTRA_DIST          = m4/gnulib-cache.m4 .tarball-version \
 	bootstrap bootstrap.conf bootstrap.std build-aux \
-	add-on
+	add-on lib/_Noreturn.h

@@ -43,7 +43,7 @@ comply with.  There are some possible workarounds:
 @item
 Request the addition of a new character classification flag.  If the issue
 can be satisfied by fiddling the emitted password a little bit (with the
-@code{--use-pbkdf2} option), that would be faster and easier than implementing
+@code{--rehash} option), that would be faster and easier than implementing
 a new option.
 
 @item
@@ -87,7 +87,7 @@ So, play with it on one site you use a lot, change the password a lot as
 you change the transform and then make a good decision.
 
 Once you need to or are required to change a password, simply specify
-a new ``--use-pbkdf2'' value for that password id. You may see its
+a new ``--rehash'' value for that password id. You may see its
 current value by specifying ``--status''.
 
 When choosing your password id transform, use things that you can easily

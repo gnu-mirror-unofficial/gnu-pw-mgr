@@ -1,4 +1,12 @@
-New in 2.3 - August, 2018
+New in 2.4 - August, 2018
+
+disable the --use-pbkdf2 option and implement --rehash as replacement
+
+* the default "rehash" count is printed with --status output
+* security question answers can now be stable across password
+  changes. Two answers are now printed: the deprecated version
+  that changes with the rehash count, and the new version that
+  is stable.
 
 New in 2.2 - June, 2018
 

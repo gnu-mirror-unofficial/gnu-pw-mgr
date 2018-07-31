@@ -17,7 +17,6 @@
  */
 
 #include <stdio.h>
-#include "scribble.h"
 
 #ifndef _
 #define _(_s) _s

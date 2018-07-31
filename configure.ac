@@ -19,20 +19,21 @@ dnl
 AC_INIT([gnu-pw-mgr],
     m4_esyscmd([cat .tarball-version]),
     [bkorb@gnu.org], gnu-pw-mgr)
+AC_CONFIG_SRCDIR([src/gnu-pw-mgr.c])
+AC_CONFIG_AUX_DIR([build-aux])
+AM_INIT_AUTOMAKE
 
 AS_BOX([Configuring AC_PACKAGE_TARNAME AC_PACKAGE_VERSION])
 AC_USE_SYSTEM_EXTENSIONS
 
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_HEADER([config.h])
-AC_CONFIG_AUX_DIR([build-aux])
 
 AM_INIT_AUTOMAKE([gnu check-news 1.13 dist-xz])
 
 AC_PROG_CC_C99
 
 gl_EARLY
-gl_INIT
 LT_INIT
 
 m4_pushdef([AO_Libopts_Dir],[libopts])dnl
@@ -44,7 +45,9 @@ m4_popdef([AO_Libopts_Dir])
     CFLAGS=`echo $CFLAGS -Wcast-align -Wmissing-prototypes \
 	-Wpointer-arith -Wshadow -Wstrict-prototypes -Wwrite-strings \
 	-Wno-format-contains-nul -fno-strict-aliasing -Wstrict-aliasing=2`]
+gl_INIT
 gl_GC_RANDOM
+
 AH_TOP([
 #ifndef GNU_PW_MGR_CONFIG_H_GUARD
 #define GNU_PW_MGR_CONFIG_H_GUARD 1])
@@ -64,8 +67,8 @@ AH_BOTTOM([
 
 #endif // GNU_PW_MGR_CONFIG_H_GUARD])
 AC_CHECK_FUNCS_ONCE([tcgetattr tcsetattr getpwuid])
-AC_CONFIG_FILES([Makefile doc/Makefile lib/Makefile src/Makefile tests/Makefile])
-AC_CONFIG_FILES([libopts/Makefile])
+AC_CONFIG_FILES([Makefile doc/Makefile lib/Makefile src/Makefile])
+AC_CONFIG_FILES([libopts/Makefile tests/Makefile])
 AM_CONDITIONAL([AG_MF],[$ag_cv_ag_supports_mf])
 AM_PROG_CC_C_O
 
