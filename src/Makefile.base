@@ -16,16 +16,18 @@
 #  You should have received a copy of the GNU General Public License along
 #  with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+GNULIB_LD              = $(GETHOSTNAME_LIB) $(LIBSOCKET) $(LIB_CRYPTO) $(LTLIBINTL)
+LOCAL_LD               = $(top_builddir)/libopts/libopts.la \
+	$(top_builddir)/lib/libgnu.la $(GNULIB_LD)
+
 bin_PROGRAMS 	       = gnu-pw-mgr sort-pw-cfg
 gnu_pw_mgr_SOURCES     = gnu-pw-mgr.c
 gnu_pw_mgr_CPPFLAGS    = $(incs)
-gnu_pw_mgr_LDADD       = $(top_builddir)/libopts/libopts.la \
-	$(top_builddir)/lib/libgnu.la $(LIB_CRYPTO)
+gnu_pw_mgr_LDADD       = $(LOCAL_LD)
 
 sort_pw_cfg_SOURCES    = sort-pw-cfg.c
 sort_pw_cfg_CPPFLAGS   = $(incs)
-sort_pw_cfg_LDADD      = $(top_builddir)/libopts/libopts.la \
-	$(top_builddir)/lib/libgnu.la
+sort_pw_cfg_LDADD      = $(LOCAL_LD)
 
 lib_incs     	= -I$(top_srcdir)/lib -I$(top_srcdir)/src -I$(top_builddir)/lib
 ao_incs      	= -I$(top_srcdir)/libopts -I$(top_builddir)/libopts

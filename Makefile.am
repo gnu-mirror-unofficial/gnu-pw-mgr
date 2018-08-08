@@ -21,6 +21,11 @@ SUBDIRS             = lib libopts src doc tests
 DIST_SUBDIRS        = $(SUBDIRS)
 LIBTOOLIZE_ARGS	    = --copy --force
 AUTOMAKE_ARGS  	    = --add-missing --copy
-EXTRA_DIST          = m4/gnulib-cache.m4 .tarball-version \
-	bootstrap bootstrap.conf bootstrap.std build-aux \
-	add-on lib/_Noreturn.h
+EXTRA_DIST          = \
+	add-on \
+	bootstrap bootstrap.conf \
+	bootstrap.std \
+	build-aux \
+	lib/_Noreturn.h \
+	m4/gnulib-cache.m4 \
+	.tarball-version

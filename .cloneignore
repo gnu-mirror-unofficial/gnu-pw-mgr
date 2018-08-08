@@ -1,0 +1,7 @@
+cscope.*
+\.git.*
+\.cvs.*
+.*~
+patches
+CVS
+.*,v
