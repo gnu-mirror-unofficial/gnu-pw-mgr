@@ -212,8 +212,8 @@ get_dft_pw(char * buf, size_t bsz,
  * @param nam   the password id
  */
 static void
-get_pbkdf2_pw(char * buf, size_t bsz,
-              char const * tag, char const * salt, char const * pwd_id_str)
+get_rehashed_pw(char * buf, size_t bsz,
+                char const * tag, char const * salt, char const * pwd_id_str)
 {
     size_t const stag_len = strlen(tag) + 1;  // seed tag len
     size_t const salt_len = strlen(salt) + 1; // salt length
@@ -290,9 +290,9 @@ print_pwid_status(char const * pwd_id_str)
             have_data = true;
         }
         if (ENABLED_OPT(PBKDF2) || (OPT_VALUE_LENGTH > (MIN_BUF_LEN - 8)))
-            printf(pwst_dig_fmt, "pbkdf2 ct", (unsigned int)OPT_VALUE_PBKDF2);
+            printf(pwst_dig_fmt, "rehash ct", (unsigned int)OPT_VALUE_PBKDF2);
         else
-            printf(pwst_str_fmt, "pbkdf2", "not used");
+            printf(pwst_str_fmt, "rehash", "not used");
     }
 
     if (HAVE_OPT(SPECIALS)) {
@@ -420,8 +420,8 @@ print_one_pwid(tOptionValue const * seed_opt, char const * pwd_id_str)
                    tag->v.strVal, txt->v.strVal, pwd_id_str);
 
     else
-        get_pbkdf2_pw((char *)txtbuf, buf_len,
-                      tag->v.strVal, txt->v.strVal, pwd_id_str);
+        get_rehashed_pw((char *)txtbuf, buf_len,
+			tag->v.strVal, txt->v.strVal, pwd_id_str);
 
     if (HAVE_OPT(SELECT_CHARS))
         select_chars(txtbuf);
@@ -457,12 +457,12 @@ print_pwid(char const * pwd_id_str)
     if (! HAVE_OPT(NO_HEADER)) {
         char const * hdr_type = hdr_normal;
         if (HAVE_OPT(CONFIRM)) {
-            pbkdf2_date="";
-            hdr_type = hdr_confirm;
+            rehash_date = "";
+            hdr_type    = hdr_confirm;
         }
         if (HAVE_OPT(LOGIN_ID))
             printf(hdr_hint, OPT_ARG(LOGIN_ID));
-        printf(pw_hdr_fmt, hdr_type, pbkdf2_date);
+        printf(pw_hdr_fmt, hdr_type, rehash_date);
     }
 
     /*
@@ -725,12 +725,13 @@ main(int argc, char ** argv)
         proc_dom_opts(argc);
 
     /*
-     * There are four operational modes:
+     * There are five operational modes:
      *
      * 1) command line operands signify printing a password, otherwise
      * 2) not having a --tag option says to read a password id from stdin, else
      * 3) not having --text option says to remove a seed, else
      * 4) add a new password seed using --tag and --text
+     * 5) change the character class defaults.
      */
     if (argc > 0) {
         char const * arg;
@@ -748,6 +749,9 @@ main(int argc, char ** argv)
 
         print_pwid(arg);
 
+    } else if (HAVE_OPT(DEFAULT_CCLASS)) {
+	set_default_cclass();
+
     } else if (! HAVE_OPT(TAG)) {
 
         /*
@@ -762,11 +766,10 @@ main(int argc, char ** argv)
             usage_message(disable_second);
         add_seed();
 
-    } else {
-        if (HAVE_OPT(SHARED))
-            usage_message(shared_removal);
-        rm_seed();
-    }
+    } else if (HAVE_OPT(SHARED))
+	usage_message(shared_removal);
+
+    else rm_seed();
 
     secure_cfg_file();
 

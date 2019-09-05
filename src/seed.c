@@ -144,19 +144,33 @@ ver_str_to_number(void)
 }
 
 /**
- * Insert a new seed at the head of the config file and copy the remainder.
- *
- * @param fp       output file pointer
- * @param cfg_text the current config text
+ * add or replace the default character class for new passwords
  */
-static inline void
-print_new_seed(FILE * fp, char const * cfg_text)
+static void
+set_default_cclass(void)
 {
-    uint32_t     seed_ver = ver_str_to_number();
-    char const * seed_txt = get_seed_text();
-    char const * marker = HAVE_OPT(SHARED) ? sec_mark : "";
+    char const * cfg_text = load_config_file();
+    char const * cfg_file = access_config_file();
+    FILE * fp = fopen(cfg_file, "w");
+    if (fp == NULL)
+	fserr(GNU_PW_MGR_EXIT_NO_CONFIG, fopen_z, cfg_file);
 
-    fprintf(fp, cfg_fmt, OPT_ARG(TAG), seed_ver, marker, seed_txt);
+    fprintf(fp, default_cclass_fmt, OPT_ARG(DEFAULT_CCLASS));
+    do {
+	char const * old_cc = strstr(cfg_text, default_cclass);
+	if (old_cc == NULL)
+	    break;
+
+	/* skip over the previous default_cclass */
+	fwrite(cfg_text, cfg_text - old_cc, 1, fp);
+	old_cc = strstr(old_cc + default_cclass_LEN, default_cclass+1);
+	if (old_cc == NULL)
+	    fserr(GNU_PW_MGR_EXIT_NO_CONFIG, fopen_z, cfg_file);
+	fputs(old_cc + default_cclass_LEN - 1, fp);
+    } while (0);
+
+    fputs(cfg_text, fp);
+    fclose(fp);
 }
 
 /**
@@ -167,23 +181,19 @@ static void
 add_seed(void)
 {
     char const * cfg_text = load_config_file();
-    FILE * fp;
+    char const * cfg_file = access_config_file();
+    FILE * fp = fopen(cfg_file, "w");
+    if (fp == NULL)
+	fserr(GNU_PW_MGR_EXIT_NO_CONFIG, fopen_z, cfg_file);
 
     /*
-     * The new tag must be unique
+     * The new tag must be unique. Delete the old one first.
      */
     {
         char * tag = scribble_get(tag_fmt_LEN + strlen(OPT_ARG(TAG)));
         sprintf(tag, tag_fmt, OPT_ARG(TAG));
         if (strstr(cfg_text, tag) != NULL)
             die(GNU_PW_MGR_EXIT_BAD_SEED, dup_tag, OPT_ARG(TAG));
-    }
-
-    {
-        char const * cfg_file = access_config_file();
-        fp = fopen(cfg_file, "w");
-        if (fp == NULL)
-            fserr(GNU_PW_MGR_EXIT_NO_CONFIG, fopen_z, cfg_file);
     }
 
     {

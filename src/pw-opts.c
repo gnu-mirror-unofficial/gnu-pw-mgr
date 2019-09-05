@@ -121,9 +121,9 @@ next_pwid_opt(char const * scan, char const * mark, size_t mark_len)
 		continue;
 
             if (strncmp(scan, date_z, date_z_LEN) == 0)
-                pbkdf2_date = day_to_string(scan + date_z_LEN);
+                rehash_date = day_to_string(scan + date_z_LEN);
             else
-                pbkdf2_date = pw_undated;
+                rehash_date = pw_undated;
             break;
 
         case SET_CMD_SPECIALS:
@@ -164,12 +164,13 @@ next_pwid_opt(char const * scan, char const * mark, size_t mark_len)
  * set the options for a particular password id.
  * It modifies the \a optCookie field of \a DESC(CCLASS).
  *
- * @param[in]  name   the password id name
+ * @param[in]  pw_id   the password id
  */
 static void
-set_pwid_opts(char const * name)
+set_pwid_opts(char const * pw_id)
 {
     char const * cfg_text = load_config_file();
+    bool stored_option    = false; // true -> we found a saved option
 
     /*
      * Find the marker that separates the seeds from the
@@ -178,13 +179,13 @@ set_pwid_opts(char const * name)
     char const * scan = strstr(cfg_text, pw_id_tag);
 
     if (HAVE_OPT(REHASH)) {
-	pbkdf2_date = pw_today;
+	rehash_date = pw_today;
 	OPT_VALUE_PBKDF2 = OPT_VALUE_REHASH;
     }
 
     if (scan != NULL) {
         size_t mark_len;
-        char * mark = make_pwid_mark(name, &mark_len);
+        char * mark = make_pwid_mark(pw_id, &mark_len);
 
         scan += pw_id_tag_LEN;
 
@@ -197,6 +198,7 @@ set_pwid_opts(char const * name)
             if (scan == NULL)
                 break;
 
+	    stored_option = true;
             end  = strstr(scan, id_mark_end);
             if (end == NULL)
                 break;
@@ -210,7 +212,28 @@ set_pwid_opts(char const * name)
         }
     }
 
-    sanity_check_cclass();
+    {
+	bool save_cclass_opt = false;
+
+	/*
+	 * If we have a default character class and we did not find
+	 * any stored options for this password id, then set the
+	 * caracter classes to the default and note that we must
+	 * rewrite the cclass option. (Setting state to "DEFINED"
+	 * tells the wrap up code that the value must be saved.)
+	 */
+	if (HAVE_OPT(DEFAULT_CCLASS) && (! stored_option)) {
+	    SET_OPT_CCLASS((uintptr_t) (void*) OPT_ARG(DEFAULT_CCLASS));
+	    save_cclass_opt = true;
+	}
+
+	sanity_check_cclass();
+
+	if (save_cclass_opt) {
+	    DESC(CCLASS).fOptState &= OPTST_PERSISTENT_MASK;
+	    DESC(CCLASS).fOptState |= OPTST_DEFINED;
+	}
+    }
 }
 
 /**
@@ -359,7 +382,7 @@ update_pwid_opts(char const * name)
             fprintf(fp, pwid_length_fmt, mark, (unsigned int)OPT_VALUE_LENGTH);
 
         if (STATE_OPT(CCLASS) == OPTST_DEFINED) {
-            tOptDesc *   od   = gnu_pw_mgrOptions.pOptDesc + INDEX_OPT_CCLASS;
+            tOptDesc *   od   = &DESC(CCLASS);
             char const * save = od->optArg.argString;
             doOptCclass(OPTPROC_RETURN_VALNAME, od);
             fprintf(fp, pwid_cclass_fmt, mark, od->optArg.argString);

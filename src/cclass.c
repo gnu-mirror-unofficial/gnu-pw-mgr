@@ -76,6 +76,9 @@ adjust_pin_n_alnum(tOptDesc * od)
     static uintptr_t const alias_mask = CCLASS_PIN | CCLASS_ALNUM;
     uintptr_t bits = OPT_VALUE_CCLASS;
 
+    /*
+     * Two of a class always imply one of that class.
+     */
     if (bits & CCLASS_TWO_DIGIT)
         bits |= CCLASS_DIGIT;
 
@@ -121,55 +124,32 @@ adjust_pin_n_alnum(tOptDesc * od)
 }
 
 /**
- * Fix up conflicting cclass bits.
- * This is called directly from the  option handling code.
+ * Fix up conflicting cclass bits and do not let saved values override
+ * the command line.
+ *
+ * This is called directly from the option handling code.
+ * If the option is on the command line, it will be processed first
+ * and the next time through, "save_bit_set" will be true.
  *
  * @param[in,out] od  the option descriptor for @code{--cclass}.
  */
 static void
 fix_cclass_bits(tOptDesc * od)
 {
-    static str_list_t *  str_list = NULL;
-    static bool fix_cclass_active = false;
+    static bool   save_bits_set   = false;
+    static void * save_bits       = NULL;
 
     adjust_pin_n_alnum(od);
-
-    /*
-     * The optionLoadLine() calls in reprocess_cclass will activate the
-     * processing of the character class option and this gets called
-     * recursively.  We don't want to do anything in those recursive calls,
-     * other than to massage away the aliases and redundancies.
-     */
-    if (fix_cclass_active)
-        return;
-    fix_cclass_active = true;
 
     /*
      * Just save command line option args and do not do anything.
      */
     if (STATE_OPT(CCLASS) == OPTST_DEFINED) {
-        static str_list_t ** list_end = &str_list;
-        str_list_t * sl;
-        size_t ln = strlen(od->optArg.argString) + sizeof(*sl) + cclass_fmt_LEN;
+	save_bits = DESC(CCLASS).optCookie;
+	save_bits_set = true;
 
-        sl = malloc(ln);
-        if (sl == NULL)
-            nomem_err(ln, "character class");
-
-        *list_end = sl;
-        list_end  = &(sl->next);
-        sl->next  = NULL;
-        /* "buf" is size of format plus strlen(argString) long */
-        sprintf(sl->buf, cclass_fmt, od->optArg.argString);
-    }
-
-    /*
-     * If there were no command line options, we're done.
-     */
-    else if (str_list != NULL)
-        reprocess_cclass(od, str_list);
-
-    fix_cclass_active = false;
+    } else if (save_bits_set)
+	DESC(CCLASS).optCookie = save_bits;
 }
 
 /**

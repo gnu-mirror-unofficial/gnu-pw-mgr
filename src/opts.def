@@ -80,7 +80,7 @@ export[2] =<<-_EOF_
 	static char const * config_file_name    = NULL;
 	static size_t       config_file_size    = 0;
 	static uintptr_t    post_cfg_setting    = 0UL;
-	static char const * pbkdf2_date         = pw_undated;
+	static char const * rehash_date         = pw_undated;
 
 	typedef struct str_list str_list_t;
 	struct str_list {
@@ -162,7 +162,8 @@ flag            = {
     arg-type    = string;
     arg-name    = TAG;
     descrip     = 'seed tag';
-    flags-cant  = login-id, cclass, length, specials, no-header, pbkdf2;
+    flags-cant  = login-id, length, cclass, rehash, specials, no-header,
+                  select-chars, confirm, status, delete;
     no-preset;
     settable;
 
@@ -229,6 +230,35 @@ flag            = {
 	then the password id will be marked as a shared.
 	Passwords will only be printed for seeds and ids that have matching
 	``shared'' settings.
+	_EOF_;
+};
+
+flag            = {
+    name        = default-cclass;
+    disable     = no;
+    descrip     = 'set default character classes';
+
+    /*
+     * Basically, you cannot have any other command line options.
+     */
+    flags-cant  = login-id, length, cclass, rehash, specials, no-header,
+                  select-chars, confirm, status, delete, tag, text, shared;
+
+    arg-type    = string;
+    arg-name    = cclass;
+    no-preset;
+
+    doc = <<- _EOF_
+	The GNU password manager defaults to requiring one alphabetic
+	character (upper or lower case) and one digit. Most passwords
+	are required to have something more complicated. Once this
+	option has been provided, the configuration file will be marked
+	as having different default classes. This new default will be
+	applied whenever a new password identifier is detected. This
+	detection is based on not having found any attributes stored
+	in the configuration file. This means that if you rely on all
+	defaults for some login (you never provided any "password
+	options" for the id), the generated password *might* change.
 	_EOF_;
 };
 
@@ -416,6 +446,11 @@ flag            = {
 	_EOF_;
 };
 
+/*
+ * DO NOT REMOVE THIS OPTION
+ *
+ * It is used internally for the rehash count.
+ */
 flag            = {
     name        = pbkdf2;
     disable     = no;

@@ -32,6 +32,8 @@ string = { nm  = cclass_conflict;
 string = { nm  = cfg_fmt;
            str = "\n<seed>\n  <tag>%s</tag><ver type=integer>%u</ver>%s\n"
                 "  <text>%s</text>\n</seed>\n"; };
+string = { nm  = default_cclass_fmt;
+           str = "<default_cclass>%s</default_cclass>\n"; };
 string = { nm  = disable_second;
            str = "disabling shared seeds conflicts with new seeds"; };
 string = { nm  = text_has_mark_fmt;
@@ -72,6 +74,7 @@ string = { nm = cfg_immutable;   str = "cannot update config file"; };
 string = { nm = cfg_insecure;    str = "config dir '%s' is insecure\n"; };
 string = { nm = cfg_missing_fmt; str = "config file '%s' is missing\n"; };
 string = { nm = date_z;          str = "date=\""; };
+string = { nm = default_cclass;  str = "<default_cclass>"; };
 string = { nm = digits_z;        str = "1234567890"; };
 string = { nm = dup_tag;         str = "duplicate tag: %s\n"; };
 string = { nm = end_text_mark;   str = "</text>"; };
