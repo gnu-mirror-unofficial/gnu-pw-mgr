@@ -30,6 +30,7 @@ issues and describe how this program addresses them.
 * Threats::                     How evil-doers access your accounts
 * Defenses::                    How to keep evil-doers at bay
 * how-it-works::                How gnu-pw-mgr helps
+* password updates::            Updating your passwords
 * security questions::          The answers to security questions
 * sharing passwords::           Sharing a password with someone
 * tracking domains::            Keeping track of too many domains
@@ -152,6 +153,35 @@ sure you can remember.
 
 These site specific options are then used to constrain the alphabet
 used to construct the password.
+
+@node password updates
+@section Updating your passwords
+
+Two methods are supported for changing your passwords:
+
+@enumerate
+@item
+Add new passwords for all domains by adding a new seed
+(@pxref{gnu-pw-mgr text,, -\-text}
+and @ref{gnu-pw-mgr tag,, -\-tag} options).
+Both the old and new passwords will be printed with the associated
+tags, until one of the seeds is removed. If you have a small number of
+accounts, this might be a good option every year or two.
+The seed is removed by specifying the @ref{gnu-pw-mgr tag,, -\-tag}
+option without the @ref{gnu-pw-mgr text,, -\-text} option.
+
+@item
+Change the rehash count for a particular domain
+(@ref{gnu-pw-mgr rehash,, -\-rehash}). By default, the
+seed plus password id are rehashed 1007 times. If you change
+that count, you will get a completely different password.
+Furthermore, @code{gnu-pw-mgr} keeps track of the last time
+the rehash count was changed. When you get the status of a
+particular password id (@ref{gnu-pw-mgr status,, -\-status}),
+its age will also be displayed.
+@end enumerate
+
+For critical accounts (like bank accounts), you should do this annually.
 
 @node security questions
 @section The answers to security questions
