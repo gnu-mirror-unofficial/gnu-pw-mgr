@@ -238,24 +238,21 @@ flag            = {
     disable     = no;
     descrip     = 'set default character classes';
 
-    /*
-     * Basically, you cannot have any other command line options.
-     */
-    flags-cant  = login-id, length, cclass, rehash, specials, no-header,
-                  select-chars, confirm, status, delete, tag, text, shared;
-
     arg-type    = string;
     arg-name    = cclass;
     no-preset;
 
     doc = <<- _EOF_
+	When present on the command line by itself, the value is stashed
+	in the configuration file and used in future invocations of
+	``gnu-pw-mgr''.
+
 	The GNU password manager defaults to requiring one alphabetic
 	character (upper or lower case) and one digit. Most passwords
 	are required to have something more complicated. Once this
-	option has been provided, the configuration file will be marked
-	as having different default classes. This new default will be
+	option has been provided, the new default will be
 	applied whenever a new password identifier is detected. This
-	detection is based on not having found any attributes stored
+	detection is based on not finding any attributes stored
 	in the configuration file. This means that if you rely on all
 	defaults for some login (you never provided any "password
 	options" for the id), the generated password *might* change.
