@@ -50,17 +50,31 @@ run_test() {
 
     # Confirmation question test
     #
-    samp='acvrtafnqwmf jfiscesagqka'
+    samp='jfiscesagqka'
     f=`$gpw --confirm dog who | \
-        awk '/TEST ONLY TAG/{print $4 " " $5}'`
+        awk '/TEST ONLY TAG/{print $4}'`
     test "X$f" = "X$samp" || \
         die $'results for "--confirm dog" differ\n'"'$samp' became '$f'"
 
-    samp='pihehbdnfnlf uvflfqdrjepf'
+    samp='uvflfqdrjepf'
     f=`$gpw --confirm pet who | \
-        awk '/TEST ONLY TAG/{print $4 " " $5}'`
+        awk '/TEST ONLY TAG/{print $4}'`
     test "X$f" = "X$samp" || \
         die $'results for "--confirm pet" differ\n'"$samp became $f"
+
+    # *OLD* confirmation question test
+    #
+    samp='acvrtafnqwmf'
+    f=`$gpw --old-confirm dog who | \
+        awk '/TEST ONLY TAG/{print $4}'`
+    test "X$f" = "X$samp" || \
+        die $'results for "--old-confirm dog" differ\n'"'$samp' became '$f'"
+
+    samp='pihehbdnfnlf'
+    f=`$gpw --old-confirm pet who | \
+        awk '/TEST ONLY TAG/{print $4}'`
+    test "X$f" = "X$samp" || \
+        die $'results for "--old-confirm pet" differ\n'"$samp became $f"
 
     # Triplet fixup test
     #

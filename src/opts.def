@@ -544,7 +544,9 @@ flag            = {
     value       = C;
     arg-type    = string;
     no-preset;
+    settable;
     descrip     = 'confirmation question answers (see man page)';
+
     doc = <<- _EOF_
 	Some web sites use "confirmation questions" that, supposedly, only
 	you know the answer to.  Unfortunately, these are often times
@@ -568,6 +570,22 @@ flag            = {
         depend *only* on the confirmation question and password id.
         Consequently, the second one will be stable going forward.
         The first answer is now deprecated.
+	_EOF_;
+};
+
+flag            = {
+    name        = old-confirm;
+    arg-type    = string;
+    deprecated;
+    no-preset;
+    descrip     = 'out-of-date confirmation question answers';
+    flag-code   = <<- _EOCode_
+	\    SET_OPT_CONFIRM(pOptDesc->optArg.argString);
+	_EOCode_;
+
+    doc = <<- _EOF_
+	Use this method of answering confirmation questions only if you have to.
+	When your password changes, this will change, too. Inconvenient.
 	_EOF_;
 };
 

@@ -1,5 +1,5 @@
 /*
- *  This file is part of gpw.
+ *  This file is part of gnu-pw-mgr.
  *
  *  Copyright (C) 2013-2018 Bruce Korb, all rights reserved.
  *  This is free software. It is licensed for use, modification and

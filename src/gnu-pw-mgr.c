@@ -98,29 +98,35 @@ set_confirm_value(char * buf, size_t bsz, unsigned char * data, size_t d_len,
 {
     const int buf_off = CONFIRM_LEN + 1;
     assert(bsz > (buf_off * 2));
-    base64_encode((char *)data, d_len, buf, buf_off);
-    buf[buf_off - 1] = buf[buf_off] = ' ';
 
-    {
+    /*
+     * The user wants the old style, changeable confirmation answer.
+     * It has already been computed in "data".
+     */
+    if (! HAVE_OPT(OLD_CONFIRM)) {
         union {
             uintptr_t       data[256 / (NBBY * sizeof(uintptr_t))];
             unsigned char   sha_buf[256 / NBBY];
         } sum;
 
         struct sha256_ctx ctx;
-        sha256_init_ctx(&ctx);
 
+	/*
+	 * compute a new hash based only on the password id string and
+	 * the confirmation text
+	 */
+        sha256_init_ctx(&ctx);
         sha256_process_bytes(pwd_id_str, strlen(pwd_id_str)+1, &ctx);
         sha256_process_bytes(OPT_ARG(CONFIRM), strlen(OPT_ARG(CONFIRM))+1, &ctx);
         sha256_finish_ctx(&ctx, sum.sha_buf);
 
-        base64_encode((char *)sum.sha_buf, sizeof(sum.sha_buf),
-                      buf + buf_off+1, bsz - buf_off - 1);
+	data   = (unsigned char *)sum.sha_buf;
+	d_len  = sizeof(sum.sha_buf);
     }
 
-    buf[buf_off + CONFIRM_LEN + 1] = NUL;
+    base64_encode((char *)data, d_len, buf, buf_off);
+    buf[CONFIRM_LEN] = NUL;
     fix_lower_only_pw(buf);
-    buf[buf_off - 1] = buf[buf_off] = ' ';
 }
 
 /**
