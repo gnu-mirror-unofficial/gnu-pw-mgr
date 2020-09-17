@@ -483,6 +483,7 @@ update_pwid_opts(char const * name)
 static void
 remove_pwid(char const * name)
 {
+    printf("Removing the following entry:\n");
     print_pwid_status(name);
     {
         bool         found    = false;
@@ -490,7 +491,7 @@ remove_pwid(char const * name)
         char *       mark     = make_pwid_mark(name, &mark_len);
         char *       scan     = config_file_text;
 
-        while (scan = strstr(scan + 1, mark),
+        while (scan = strstr(scan, mark),
                scan != NULL) {
             char * sol = scan;
             found = true;
