@@ -78,9 +78,13 @@ export[2] =<<-_EOF_
 
 	static unsigned int const secure_mask   = S_IRWXG | S_IRWXO;
 	static char const * config_file_name    = NULL;
+	static char const   empty_config_data[] = "";
+	static char *       config_file_text    = (char *)(void *)empty_config_data;
 	static size_t       config_file_size    = 0;
 	static uintptr_t    post_cfg_setting    = 0UL;
 	static char const * rehash_date         = pw_undated;
+	static bool         have_stored_opts    = false;
+	static char *       cclass_define_str   = NULL;
 
 	typedef struct str_list str_list_t;
 	struct str_list {
@@ -355,9 +359,9 @@ flag = {
 	still others require them, but only certain ones.  If disallowed,
 	specify @code{no-special} and special characters will be replaced with
 	digits.  If @code{special} is specified specifically, then in the
-	absence of a '+' or '/' character, one character will be replaced with
-	a hyphen.  Other characters may be substituted for these three special
-	characters with the @code{--specials} option.
+	absence of a '+' or '/' character (or alternates), one character will
+	be replaced with a hyphen.  Other characters may be substituted for
+	these three special characters with the @code{--specials} option.
 
 	@noindent
 	Explanations of the keywords:
@@ -413,6 +417,19 @@ flag = {
 	characters may be specified this way.  ``two-alpha'' is not supported.
 	@end table
 	_EOF_;
+
+    flag-code[0] = <<- _EOCode_
+	    if (pOptDesc->optArg.argString != NULL) {
+	        switch (pOptDesc->optArg.argString[0]) {
+	        case '-': case '+':
+	            cclass_define_str = strdup(pOptDesc->optArg.argString);
+	            /* FALLTHROUGH */
+	        default:
+	            ;
+	            /* FALLTHROUGH */
+	        }
+	    }
+	_EOCode_;
 
     flag-code[1] = <<- _EOCode_
 	    if (pOptions == &gnu_pw_mgrOptions)

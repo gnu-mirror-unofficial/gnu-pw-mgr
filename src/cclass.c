@@ -145,11 +145,11 @@ fix_cclass_bits(tOptDesc * od)
      * Just save command line option args and do not do anything.
      */
     if (STATE_OPT(CCLASS) == OPTST_DEFINED) {
-	save_bits = DESC(CCLASS).optCookie;
+	save_bits = od->optCookie;
 	save_bits_set = true;
 
     } else if (save_bits_set)
-	DESC(CCLASS).optCookie = save_bits;
+	od->optCookie = save_bits;
 }
 
 /**

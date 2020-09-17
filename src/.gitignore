@@ -5,3 +5,4 @@ gpw
 *.o
 opts.[ch]
 set-opt.[ch]
+cc-gpw.sh

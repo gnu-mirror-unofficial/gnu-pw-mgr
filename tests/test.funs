@@ -51,3 +51,11 @@ init_test() {
 }
 
 readonly run_dir=`pwd`
+# Local Variables:
+# mode:shell-script
+# sh-indentation:4
+# sh-basic-offset:4
+# indent-tabs-mode: nil
+# End:
+
+# test.funs ends here

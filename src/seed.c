@@ -149,27 +149,28 @@ ver_str_to_number(void)
 static void
 set_default_cclass(void)
 {
-    char const * cfg_text = load_config_file();
-    char const * cfg_file = access_config_file();
+    char const * cfg_file;
+    load_config_file();
+    cfg_file = access_config_file();
     FILE * fp = fopen(cfg_file, "w");
     if (fp == NULL)
 	fserr(GNU_PW_MGR_EXIT_NO_CONFIG, fopen_z, cfg_file);
 
     fprintf(fp, default_cclass_fmt, OPT_ARG(DEFAULT_CCLASS));
     do {
-	char const * old_cc = strstr(cfg_text, default_cclass);
+	char const * old_cc = strstr(config_file_text, default_cclass);
 	if (old_cc == NULL)
 	    break;
 
 	/* skip over the previous default_cclass */
-	fwrite(cfg_text, cfg_text - old_cc, 1, fp);
+	fwrite(config_file_text, config_file_text - old_cc, 1, fp);
 	old_cc = strstr(old_cc + default_cclass_LEN, default_cclass+1);
 	if (old_cc == NULL)
 	    fserr(GNU_PW_MGR_EXIT_NO_CONFIG, fopen_z, cfg_file);
 	fputs(old_cc + default_cclass_LEN - 1, fp);
     } while (0);
 
-    fputs(cfg_text, fp);
+    fputs(config_file_text, fp);
     fclose(fp);
 }
 
@@ -180,9 +181,12 @@ set_default_cclass(void)
 static void
 add_seed(void)
 {
-    char const * cfg_text = load_config_file();
-    char const * cfg_file = access_config_file();
-    FILE * fp = fopen(cfg_file, "w");
+    char const * cfg_file;
+    FILE * fp;
+
+    load_config_file();
+    cfg_file = access_config_file();
+    fp = fopen(cfg_file, "w");
     if (fp == NULL)
 	fserr(GNU_PW_MGR_EXIT_NO_CONFIG, fopen_z, cfg_file);
 
@@ -192,7 +196,7 @@ add_seed(void)
     {
         char * tag = scribble_get(tag_fmt_LEN + strlen(OPT_ARG(TAG)));
         sprintf(tag, tag_fmt, OPT_ARG(TAG));
-        if (strstr(cfg_text, tag) != NULL)
+        if (strstr(config_file_text, tag) != NULL)
             die(GNU_PW_MGR_EXIT_BAD_SEED, dup_tag, OPT_ARG(TAG));
     }
 
@@ -204,7 +208,7 @@ add_seed(void)
 	fprintf(fp, cfg_fmt, OPT_ARG(TAG), seed_ver, marker, seed_txt);
     }
 
-    fputs(cfg_text, fp);
+    fputs(config_file_text, fp);
     fclose(fp);
 }
 
@@ -214,13 +218,14 @@ add_seed(void)
 static void
 rm_seed(void)
 {
-    char const * cfg_data = load_config_file();
-    char const * prune    = cfg_data;
-
+    char const * prune;
     char * tag = scribble_get(tag_fmt_LEN + strlen(OPT_ARG(TAG)) + 1);
 
+    load_config_file();
+    prune = config_file_text;
+
     sprintf(tag, tag_fmt, OPT_ARG(TAG));
-    tag = strstr(cfg_data, tag);
+    tag = strstr(config_file_text, tag);
     if (tag == NULL)
         die(GNU_PW_MGR_EXIT_BAD_SEED, tag_gone_fmt, OPT_ARG(TAG));
 
@@ -239,8 +244,8 @@ rm_seed(void)
         FILE * fp = fopen(cfg_file, "w");
         if (fp == NULL)
             fserr(GNU_PW_MGR_EXIT_NO_CONFIG, open_z, cfg_file);
-        if (prune > cfg_data)
-            fwrite(cfg_data, prune - cfg_data, 1, fp);
+        if (prune > config_file_text)
+            fwrite(config_file_text, prune - config_file_text, 1, fp);
 
         /*
          * If there is another <seed>, print from there.

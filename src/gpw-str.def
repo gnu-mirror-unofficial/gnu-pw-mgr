@@ -86,6 +86,7 @@ string = { nm = hdr_normal;      str = "password"; };
 string = { nm = home_cfg;        str = ".gnupwmgrrc"; };
 string = { nm = home_dom;        str = ".gnupwmgrdom"; };
 string = { nm = id_mark_end;     str = "</pwtag>"; };
+string = { nm = no_id_mark_end;  str = "config entry missing end mark: %32.32s\n"; };
 string = { nm = id_mark_fmt;     str = "<pwtag id=\"%s\""; };
 string = { nm = inv_cfg_perms;   str = "invalid config file permissions for %s: 0%o\n"; };
 string = { nm = inv_pwd;         str = "invalid password generated\n"; };

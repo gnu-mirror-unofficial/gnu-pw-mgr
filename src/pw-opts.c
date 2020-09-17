@@ -49,7 +49,7 @@ make_pwid_mark(char const * name, size_t * len)
 
     {
         static unsigned long const mark_size =
-	    id_mark_fmt_LEN + MARK_TEXT_LEN + 10;
+            id_mark_fmt_LEN + MARK_TEXT_LEN + 10;
         char * mark = scribble_get(mark_size);
         *len = sprintf(mark, id_mark_fmt, txtbuf);
         return mark;
@@ -118,7 +118,7 @@ next_pwid_opt(char const * scan, char const * mark, size_t mark_len)
         case SET_CMD_NO_PBKDF2:
         case SET_CMD_USE_PBKDF2:
             if (HAVE_OPT(REHASH))
-		continue;
+                continue;
 
             if (strncmp(scan, date_z, date_z_LEN) == 0)
                 rehash_date = day_to_string(scan + date_z_LEN);
@@ -161,6 +161,194 @@ next_pwid_opt(char const * scan, char const * mark, size_t mark_len)
 }
 
 /**
+ * set the config file stored options for a particular password id.
+ * It modifies the \a optCookie field of \a DESC(CCLASS).
+ *
+ * @param[in]  mark     the marker for this password id
+ * @param[in]  mark_len the length of the marker
+ */
+static void
+set_stored_opts(char * mark, size_t mark_len)
+{
+    /*
+     * Find the marker that separates the seeds from the
+     * password id options
+     */
+    char const * scan = config_file_text;
+
+    if (HAVE_OPT(REHASH)) {
+        rehash_date = pw_today;
+        OPT_VALUE_PBKDF2 = OPT_VALUE_REHASH;
+    }
+
+    while (scan = next_pwid_opt(scan, mark, mark_len),
+           scan != NULL) {
+
+        char * opt_text;
+        size_t text_len;
+        char * end = strstr(scan, id_mark_end);
+        if (end == NULL)
+            die(GNU_PW_MGR_EXIT_BAD_CONFIG, no_id_mark_end, scan);
+
+        have_stored_opts = true;
+
+        text_len = end - scan;
+        opt_text = scribble_get(text_len + 1);
+        memcpy(opt_text, scan, text_len);
+        opt_text[text_len] = NUL;
+        optionLoadLine(&gnu_pw_mgrOptions, opt_text);
+        scan = end + id_mark_end_LEN;
+    }
+}
+
+/**
+ * Sometimes the cclass option depends on the old value. Fix it up, in case.
+ *
+ * @param[in]  buf     scan this buffer for the desired option
+ * @param[in]  mark    the password id hash in base64
+ * @param[in]  m_len   the length of that hash
+ * @param[in]  typ     the enumerated value of the searched for entry
+ *
+ * @returns a pointer to the start of the entry, or NULL
+ */
+static char *
+search_for_option(char * buf, char const * mark, size_t m_len, set_opt_enum_t typ)
+{
+    for (;;) {
+        char * popt = strstr(buf, mark);
+        char * p    = popt;
+
+        if (p == NULL)
+            return NULL;
+
+        /*
+         * The marker may have more than just <pwtag id="..">, so
+         * scan over whatever else and past the closing '>'.
+         */
+        p = strchr(p, '>');
+        if (p == NULL)
+	    die(GNU_PW_MGR_EXIT_BAD_CONFIG, no_id_mark_end, mark);
+
+        /*
+         * Convert the next part into the option type enumeration
+         * and see if it matches the one we're looking for.
+         * Spellings are "allowed" to vary, so it's not just a
+         * strncmp().
+         */
+        if (find_set_opt_cmd(++p) == typ)
+	    return popt;
+
+        buf = p + id_mark_end_LEN;
+    }
+}
+
+/**
+ * Before removing a cclass option from the configuration text,
+ * make sure the newly defined option doesn't start with a '+' or '-'.
+ * If it does, then we are modifying a previously existing value.
+ *
+ * @param[in]  mark    the password id hash in base64
+ * @param[in]  m_len   the length of that hash
+ */
+static void
+adjust_cclass(char const * mark, size_t m_len)
+{
+    tOptDesc *    od = &DESC(CCLASS);
+    char const *  oa = od->optArg.argString;
+    char *       buf = search_for_option(
+        config_file_text, mark, m_len, SET_CMD_CCLASS);
+
+    /*
+     * If      the option isn't in the config
+     *    *OR* the command line option doesn't have an argument
+     *    *OR* the string doesn't start with either '+' or '-',
+     * then there's nothing to do.
+     */
+    if (  ((buf == NULL) || (oa == NULL))
+       || ((*oa != '-') && (*oa != '+')) )
+	return;
+}
+
+/**
+ * Sometimes the cclass option depends on the old value. Fix it up, in case.
+ *
+ * @param[in]  mark    the password id hash in base64
+ * @param[in]  m_len   the length of that hash
+ * @param[in]  typ     the enumerated value of the searched for entry
+ *
+ * @returns true if the option was actually removed
+ */
+static bool
+remove_opt(char const * mark, size_t m_len, set_opt_enum_t typ)
+{
+    char * buf = config_file_text;
+    bool   res = false;
+
+    while (buf = search_for_option(buf, mark, m_len, typ),
+	   buf != NULL) {
+
+	char * next = strstr(buf + m_len, id_mark_end);
+	if (next == NULL)
+	    die(GNU_PW_MGR_EXIT_BAD_CONFIG, no_id_mark_end, buf);
+
+	res   = true;
+	next += id_mark_end_LEN;
+	while (*next == NL) next++;
+
+	if (*next == NUL) {
+	    *buf = NUL;
+	    break;
+	}
+
+	memmove(buf, next, strlen(next) + 1);
+    }	    
+    return res;
+}
+
+/**
+ * check for updated options
+ *
+ * @param cfg_text the config file text -- all of it
+ * @param name     sha256 hash of the password id
+ * @param mark_p   pointer to pointer to memory for stashing the mark serch string
+ *
+ * @returns true if an old option has been removed
+ */
+static bool
+remove_defined_opts(char * mark, size_t mark_len)
+{
+    bool res = false;
+
+    if (STATE_OPT(LOGIN_ID) == OPTST_DEFINED) {
+        res |= remove_opt(mark, mark_len, SET_CMD_LOGIN_ID);
+    }
+
+    if (STATE_OPT(LENGTH) == OPTST_DEFINED) {
+        res |= remove_opt(mark, mark_len, SET_CMD_LENGTH);
+    }
+
+    if (STATE_OPT(CCLASS) == OPTST_DEFINED) {
+	adjust_cclass(mark, mark_len);
+        res |= remove_opt(mark, mark_len, SET_CMD_CCLASS);
+    }
+
+    if (HAVE_OPT(REHASH)) {
+        res |= remove_opt(mark, mark_len, SET_CMD_NO_PBKDF2);
+        res |= remove_opt(mark, mark_len, SET_CMD_USE_PBKDF2);
+    }
+
+    if (STATE_OPT(SPECIALS) == OPTST_DEFINED) {
+        res |= remove_opt(mark, mark_len, SET_CMD_SPECIALS);
+    }
+
+    if (STATE_OPT(SHARED) == OPTST_DEFINED) {
+        res |= remove_opt(mark, mark_len, SET_CMD_SHARED);
+    }
+
+    return res;
+}
+
+/**
  * set the options for a particular password id.
  * It modifies the \a optCookie field of \a DESC(CCLASS).
  *
@@ -169,167 +357,35 @@ next_pwid_opt(char const * scan, char const * mark, size_t mark_len)
 static void
 set_pwid_opts(char const * pw_id)
 {
-    char const * cfg_text = load_config_file();
-    bool stored_option    = false; // true -> we found a saved option
-
-    /*
-     * Find the marker that separates the seeds from the
-     * password id options
-     */
-    char const * scan = strstr(cfg_text, pw_id_tag);
-
-    if (HAVE_OPT(REHASH)) {
-	rehash_date = pw_today;
-	OPT_VALUE_PBKDF2 = OPT_VALUE_REHASH;
-    }
-
-    if (scan != NULL) {
-        size_t mark_len;
-        char * mark = make_pwid_mark(pw_id, &mark_len);
-
-        scan += pw_id_tag_LEN;
-
-        for (;;) {
-            char * end;
-            char * opt_text;
-            size_t text_len;
-
-            scan = next_pwid_opt(scan, mark, mark_len);
-            if (scan == NULL)
-                break;
-
-	    stored_option = true;
-            end  = strstr(scan, id_mark_end);
-            if (end == NULL)
-                break;
-
-            text_len = end - scan;
-            opt_text = scribble_get(text_len + 1);
-            memcpy(opt_text, scan, text_len);
-            opt_text[text_len] = NUL;
-            optionLoadLine(&gnu_pw_mgrOptions, opt_text);
-            scan = end + id_mark_end_LEN;
-        }
-    }
-
-    {
-	bool save_cclass_opt = false;
-
-	/*
-	 * If we have a default character class and we did not find
-	 * any stored options for this password id, then set the
-	 * caracter classes to the default and note that we must
-	 * rewrite the cclass option. (Setting state to "DEFINED"
-	 * tells the wrap up code that the value must be saved.)
-	 */
-	if (HAVE_OPT(DEFAULT_CCLASS) && (! stored_option)) {
-	    SET_OPT_CCLASS((uintptr_t) (void*) OPT_ARG(DEFAULT_CCLASS));
-	    save_cclass_opt = true;
-	}
-
-	sanity_check_cclass();
-
-	if (save_cclass_opt) {
-	    DESC(CCLASS).fOptState &= OPTST_PERSISTENT_MASK;
-	    DESC(CCLASS).fOptState |= OPTST_DEFINED;
-	}
-    }
-}
-
-/**
- * Remove a replaced option.  A new instance of an option is about to
- * be inserted in the config file.  Remove any older instances of it.
- *
- * @param[in,out]   txt     the configuration text
- * @param[in]       mark    the password id hash in base64
- * @param[in]       m_len   the length of that hash
- * @param[in]       typ     the option type to remove
- */
-static void
-remove_opt(char const * txt, char const * mark, size_t m_len,
-           set_opt_enum_t typ)
-{
-    char * buf = (char *)(void *)txt;
-
-    for (;;) {
-        char * popt = strstr(buf, mark);
-        char * p    = popt;
-
-        if (p == NULL)
-            return;
-
-        /*
-         * The marker may have more than just <pwtag id="..">, so
-         * scan over whatever else and past the closing '>'.
-         */
-        p = strchr(p, '>');
-        if (p == NULL)
-            return;
-
-        /*
-         * Convert the next part into the option type enumeration
-         * and see if it matches the one we're looking for.
-         * Spellings are "allowed" to vary, so it's not just a
-         * strncmp().
-         */
-        if (find_set_opt_cmd(++p) == typ) {
-            buf = popt;
-            break;
-        }
-        buf = p + id_mark_end_LEN;
-    }
-    {
-        char * next = strstr(buf + m_len, pwtag_z);
-        if (next == NULL) {
-            while (buf[-1] == NL)  buf--;
-            *(buf++) = NL;
-            *buf = NUL;
-        } else {
-            size_t ln = strlen(next) + 1;
-            memmove(buf, next, ln);
-        }
-    }
-}
-
-static bool
-removed_old_opts(char const * cfg_text, char const * name, char ** mark_p)
-{
-    bool res = false;
     size_t mark_len;
+    char const * scan = config_file_text;
+    char *       mark = make_pwid_mark(pw_id, &mark_len);
 
-    char * mark = *mark_p = make_pwid_mark(name, &mark_len);
+    remove_defined_opts(mark, mark_len);
+    set_stored_opts(mark, mark_len);
 
-    if (STATE_OPT(LOGIN_ID) == OPTST_DEFINED) {
-        res = true;
-        remove_opt(cfg_text, mark, mark_len, SET_CMD_LOGIN_ID);
+    {
+        bool save_cclass_opt = false;
+
+        /*
+         * If we have a default character class and we did not find
+         * any stored options for this password id, then set the
+         * caracter classes to the default and note that we must
+         * rewrite the cclass option. (Setting state to "DEFINED"
+         * tells the wrap up code that the value must be saved.)
+         */
+        if (HAVE_OPT(DEFAULT_CCLASS) && (! have_stored_opts)) {
+            SET_OPT_CCLASS((uintptr_t) (void*) OPT_ARG(DEFAULT_CCLASS));
+            save_cclass_opt = true;
+        }
+
+        sanity_check_cclass();
+
+        if (save_cclass_opt) {
+            DESC(CCLASS).fOptState &= OPTST_PERSISTENT_MASK;
+            DESC(CCLASS).fOptState |= OPTST_DEFINED;
+        }
     }
-
-    if (STATE_OPT(LENGTH) == OPTST_DEFINED) {
-        res = true;
-        remove_opt(cfg_text, mark, mark_len, SET_CMD_LENGTH);
-    }
-
-    if (STATE_OPT(CCLASS) == OPTST_DEFINED) {
-        res = true;
-        remove_opt(cfg_text, mark, mark_len, SET_CMD_CCLASS);
-    }
-    if (HAVE_OPT(REHASH)) {
-        res = true;
-        remove_opt(cfg_text, mark, mark_len, SET_CMD_NO_PBKDF2);
-        remove_opt(cfg_text, mark, mark_len, SET_CMD_USE_PBKDF2);
-    }
-
-    if (STATE_OPT(SPECIALS) == OPTST_DEFINED) {
-        res = true;
-        remove_opt(cfg_text, mark, mark_len, SET_CMD_SPECIALS);
-    }
-
-    if (STATE_OPT(SHARED) == OPTST_DEFINED) {
-        res = true;
-        remove_opt(cfg_text, mark, mark_len, SET_CMD_SHARED);
-    }
-
-    return res;
 }
 
 /**
@@ -342,16 +398,17 @@ removed_old_opts(char const * cfg_text, char const * name, char ** mark_p)
 static void
 update_pwid_opts(char const * name)
 {
-    char const * cfg_text = load_config_file();
-    char const * scan     = strstr(cfg_text, pw_id_tag);
-    char * mark = NULL;
+    char const * scan;
+    size_t       mark_len;
+    char *       mark = make_pwid_mark(name, &mark_len);
 
+    scan = strstr(config_file_text, pw_id_tag);
     if (scan == NULL) {
-        size_t len = strlen(cfg_text);
+        size_t len = strlen(config_file_text);
         char * emk = scribble_get(len + pw_id_tag_LEN + 3);
 
-        memcpy(emk, cfg_text, len);
-        cfg_text = emk;
+        memcpy(emk, config_file_text, len);
+        config_file_text = emk;
         emk += len;
 
         memcpy(emk, pw_id_tag, pw_id_tag_LEN);
@@ -361,11 +418,8 @@ update_pwid_opts(char const * name)
         *emk     = NUL;
     }
 
-    if (! removed_old_opts(cfg_text, name, &mark))
-        return;
-
     /*
-     * We have new info to stash.  Any old values in "cfg_text"
+     * We had at least one command line option.
      */
     {
         char const * fnm = access_config_file();
@@ -374,7 +428,7 @@ update_pwid_opts(char const * name)
         if (fp == NULL)
             fserr(GNU_PW_MGR_EXIT_NO_CONFIG, fopen_z, fnm);
 
-        fputs(cfg_text, fp);
+        fputs(config_file_text, fp);
         if (STATE_OPT(LOGIN_ID) == OPTST_DEFINED)
             fprintf(fp, pwid_login_id_fmt, mark, OPT_ARG(LOGIN_ID));
 
@@ -382,6 +436,11 @@ update_pwid_opts(char const * name)
             fprintf(fp, pwid_length_fmt, mark, (unsigned int)OPT_VALUE_LENGTH);
 
         if (STATE_OPT(CCLASS) == OPTST_DEFINED) {
+            /*
+             * The CCLASS is specified as a series of bits. Call the option
+             * handling function with a magic address for the option structure
+             * and it will replace the binary value with an allocated string.
+             */
             tOptDesc *   od   = &DESC(CCLASS);
             char const * save = od->optArg.argString;
             doOptCclass(OPTPROC_RETURN_VALNAME, od);
@@ -390,12 +449,21 @@ update_pwid_opts(char const * name)
             od->optArg.argString = save;
         }
 
-	if (HAVE_OPT(REHASH)) {
+        /*
+         * We are here because a new persistent option was specified.
+         *
+         * If either --rehash was specified *OR*
+         *    some other persistent option was specified,
+         * then we'll stash the rehash value and timestamp the password id
+         *
+         * NOTE CAREFULLY: if there is a previous rehash value, then
+         * "have_stored_opts" will be true and we won't update the date.
+         */
+        if (HAVE_OPT(REHASH) || (! have_stored_opts)) {
             unsigned int day = (unsigned int)
                 (time(NULL) / SECONDS_IN_DAY);
-
-            fprintf(fp, pwid_pbkdf2_fmt, mark, day,
-		    (uint32_t)OPT_VALUE_REHASH);
+	    uint32_t val = HAVE_OPT(REHASH) ? OPT_VALUE_REHASH : OPT_VALUE_PBKDF2;
+            fprintf(fp, pwid_pbkdf2_fmt, mark, day, val);
         }
 
         if (STATE_OPT(SPECIALS) == OPTST_DEFINED)
@@ -417,31 +485,33 @@ remove_pwid(char const * name)
 {
     print_pwid_status(name);
     {
-        size_t       mark_len;
-        char const * cfg_text = load_config_file();
-        char *       scan     = strstr(cfg_text, pw_id_tag);
-        char *       mark     = make_pwid_mark(name, &mark_len);
         bool         found    = false;
-
-        if (scan == NULL)
-            return;
-        scan += pw_id_tag_LEN;
+        size_t       mark_len;
+        char *       mark     = make_pwid_mark(name, &mark_len);
+        char *       scan     = config_file_text;
 
         while (scan = strstr(scan + 1, mark),
                scan != NULL) {
             char * sol = scan;
             found = true;
 
-        find_line_end:
+        find_next_tag_end:
 
+            /*
+             * If we can't find a tag end marker, truncate the file here.
+             */
             scan = strstr(scan + mark_len, pwtag_z);
             if (scan == NULL) {
                 *sol = NUL;
                 break;
             }
 
-            if (strncmp(scan, mark, mark_len) == 0)
-                goto find_line_end;
+            if (   (scan[pwtag_z_LEN] == NL)
+                && (strncmp(scan + pwtag_z_LEN + 1, mark, mark_len) == 0))
+                {
+                    scan += pwtag_z_LEN + 1;
+                    goto find_next_tag_end;
+                }
 
             memmove(sol, scan, strlen(scan) + 1);
             scan = sol;
@@ -454,7 +524,7 @@ remove_pwid(char const * name)
             if (fp == NULL)
                 fserr(GNU_PW_MGR_EXIT_NO_CONFIG, fopen_z, fnm);
 
-            fputs(cfg_text, fp);
+            fputs(config_file_text, fp);
             fclose(fp);
         }
     }
@@ -558,3 +628,11 @@ fix_options(int * ac, char *** av)
     }
     insert_load_opts(ac, av);
 }
+
+/*
+ * Local Variables:
+ * mode: C
+ * c-file-style: "stroustrup"
+ * indent-tabs-mode: nil
+ * End:
+ * end of pw-opts.c */

@@ -75,38 +75,31 @@ secure_cfg_file(void)
 }
 
 /**
- * return the pointer to the configuration file text.
- * If already loaded, just return the address.  Otherwise,
- * read in all the text into allocated memory.
- *
- * @returns pointer to NUL-terminated, allocated, immutable text.
+ * load the configuration file into memory and set the global variable
+ * @config_file_text to point to it.
  */
-static char const *
+static void
 load_config_file(void)
 {
-    static char empty[] = "";
-    static char const * config_file_data = empty;
-
-    char * dta;
-    if (config_file_data != empty)
-        free((void *)config_file_data);
+    if (config_file_text != empty_config_data)
+        free((void *)config_file_text);
 
     (void) access_config_file();
     if (config_file_size == 0) {
-        config_file_data = empty;
-        return config_file_data;
+        config_file_text = (char *)(void *)empty_config_data;
+        return;
     }
 
-    config_file_data = dta = malloc(config_file_size + 1);
-
-    if (dta == NULL)
-        nomem_err(config_file_size, "config file data");
     {
-        FILE * fp = fopen(config_file_name, "r");
-        size_t sz = config_file_size;
+        FILE * fp  = fopen(config_file_name, "r");
+        size_t sz  = config_file_size;
+        char * dta = config_file_text = malloc(config_file_size + 1);
 
         if (fp == NULL)
             fserr(GNU_PW_MGR_EXIT_NO_CONFIG, fopen_z, config_file_name);
+
+        if (dta == NULL)
+            nomem_err(config_file_size, "config file data");
 
         for (;;) {
             int ct = fread(dta, 1, sz, fp);
@@ -117,10 +110,9 @@ load_config_file(void)
                 break;
             dta += ct;
         }
-    }
 
-    dta[config_file_size] = NUL;
-    return config_file_data;
+        dta[config_file_size] = NUL;
+    }
 }
 
 #define config_file_name config_file_name used in invalid context
@@ -317,3 +309,10 @@ find_dom_file(void)
 }
 #endif
 
+/*
+ * Local Variables:
+ * mode: C
+ * c-file-style: "stroustrup"
+ * indent-tabs-mode: nil
+ * End:
+ * end of cfg-file.c */

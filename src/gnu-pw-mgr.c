@@ -448,6 +448,7 @@ print_pwid(char const * pwd_id_str)
     if (*pwd_id_str == NUL)
         die(GNU_PW_MGR_EXIT_NO_PWID, no_pwid);
 
+    load_config_file();
     set_pwid_opts(pwd_id_str);
     if (HAVE_OPT(STATUS)) {
         print_pwid_status(pwd_id_str);
@@ -782,3 +783,11 @@ main(int argc, char ** argv)
     scribble_deinit();
     return GNU_PW_MGR_EXIT_SUCCESS;
 }
+
+/*
+ * Local Variables:
+ * mode: C
+ * c-file-style: "stroustrup"
+ * indent-tabs-mode: nil
+ * End:
+ * end of gnu-pw-mgr.c */
