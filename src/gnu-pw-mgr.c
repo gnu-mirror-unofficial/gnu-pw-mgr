@@ -279,7 +279,7 @@ print_pwid_status(char const * pwd_id_str)
     if (HAVE_OPT(LOGIN_ID)) {
         have_data = true;
         print_pwid_header(pwd_id_str);
-        printf(pwst_str_fmt, "login-id", OPT_ARG(LOGIN_ID));
+        printf(pwst_str_fmt, DESC(LOGIN_ID).pz_Name, OPT_ARG(LOGIN_ID));
     }
 
     if (HAVE_OPT(LENGTH)) {
@@ -287,7 +287,7 @@ print_pwid_status(char const * pwd_id_str)
             print_pwid_header(pwd_id_str);
             have_data = true;
         }
-        printf(pwst_dig_fmt, "length", (unsigned int)OPT_VALUE_LENGTH);
+        printf(pwst_dig_fmt, DESC(LENGTH).pz_Name, (unsigned int)OPT_VALUE_LENGTH);
     }
 
     if (HAVE_OPT(PBKDF2) || (OPT_VALUE_LENGTH > (MIN_BUF_LEN - 8))) {
@@ -298,7 +298,7 @@ print_pwid_status(char const * pwd_id_str)
         if (ENABLED_OPT(PBKDF2) || (OPT_VALUE_LENGTH > (MIN_BUF_LEN - 8)))
             printf(pwst_dig_fmt, "rehash ct", (unsigned int)OPT_VALUE_PBKDF2);
         else
-            printf(pwst_str_fmt, "rehash", "not used");
+            printf(pwst_str_fmt, DESC(REHASH).pz_Name, "not used");
     }
 
     if (HAVE_OPT(SPECIALS)) {
@@ -306,7 +306,7 @@ print_pwid_status(char const * pwd_id_str)
             print_pwid_header(pwd_id_str);
             have_data = true;
         }
-        printf(pwst_str_fmt, "spec chars", OPT_ARG(SPECIALS));
+        printf(pwst_str_fmt, DESC(SPECIALS).pz_Name, OPT_ARG(SPECIALS));
     }
 
     if (HAVE_OPT(CCLASS)) {
@@ -318,14 +318,14 @@ print_pwid_status(char const * pwd_id_str)
         }
         doOptCclass(OPTPROC_RETURN_VALNAME, &DESC(CCLASS));
         names = DESC(CCLASS).optArg.argString;
-        printf(pwst_str_fmt, "ch-class", names);
+        printf(pwst_str_fmt, DESC(CCLASS).pz_Name, names);
         free((void *)names);
     }
 
     if (! have_data)
-        printf("The %s password id has all default settings\n", pwd_id_str);
+        printf(default_all_fmt, pwd_id_str);
     else if (! HAVE_OPT(PBKDF2))
-        printf(pwst_dig_dft, "pbkdf2 ct", (unsigned int)OPT_VALUE_PBKDF2);
+        printf(pwst_dig_dft, DESC(REHASH).pz_Name, (unsigned int)OPT_VALUE_PBKDF2);
 }
 
 /**
@@ -379,7 +379,7 @@ print_one_pwid(tOptionValue const * seed_opt, char const * pwd_id_str)
 
         if ((ver == NULL) || (ver->valType != OPARG_TYPE_NUMERIC)) {
             tOptionValue const * tag = optionGetValue(seed_opt, tag_z);
-            warning_msg(too_old_z, tag->v.strVal);
+            warning_msg(too_old_fmt, tag->v.strVal);
             return false;
         }
     }
@@ -484,7 +484,8 @@ print_pwid(char const * pwd_id_str)
         die(GNU_PW_MGR_EXIT_NO_SEED, no_passwords,
             ENABLED_OPT(SHARED) ? sec_pw_type : "");
 
-    update_pwid_opts(pwd_id_str);
+    if (update_stored_opts)
+        update_pwid_opts(pwd_id_str);
 }
 
 /**

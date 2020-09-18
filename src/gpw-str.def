@@ -1,3 +1,5 @@
+/* -*- Mode: conf -*- */
+
 AutoGen Definitions strings;
 
 /*
@@ -62,33 +64,26 @@ string = { nm  = pbkdf2_err_fmt;
 string = { nm  = pin_too_big;
            str = "a pin length of %u exceeds %u\n"; };
 
+// SHORT STRINGS
+
 string = { nm = alnum_pin_confl; str = "cclass 'pin' and 'alnum' conflict\n"; };
 string = { nm = argv_z;          str = "argv"; };
-string = { nm = bad_cfg_ent;     str = "invalid config entry: %s%s\n"; };
 string = { nm = bad_seed;        str = "the seed value was invalid\n"; };
 string = { nm = bad_vers;        str = "unparsable version number"; };
-string = { nm = cannot_stat_cfg; str = "cannot stat config file: '%s'\n"; };
-string = { nm = cclass_fmt;      str = "cclass = %s"; };
 string = { nm = cclass_str;      str = "cclass string"; };
 string = { nm = cfg_immutable;   str = "cannot update config file"; };
-string = { nm = cfg_insecure;    str = "config dir '%s' is insecure\n"; };
-string = { nm = cfg_missing_fmt; str = "config file '%s' is missing\n"; };
+string = { nm = dash_config_z;   str = "--config"; };
 string = { nm = date_z;          str = "date=\""; };
 string = { nm = default_cclass;  str = "<default_cclass>"; };
 string = { nm = digits_z;        str = "1234567890"; };
-string = { nm = dup_tag;         str = "duplicate tag: %s\n"; };
 string = { nm = end_text_mark;   str = "</text>"; };
 string = { nm = fopen_z;         str = "fopen"; };
 string = { nm = fread_z;         str = "fread"; };
 string = { nm = hdr_confirm;     str = "old-confirm:  new-confirm"; };
-string = { nm = hdr_hint;        str = "\nlogin id hint: %s"; };
 string = { nm = hdr_normal;      str = "password"; };
 string = { nm = home_cfg;        str = ".gnupwmgrrc"; };
 string = { nm = home_dom;        str = ".gnupwmgrdom"; };
 string = { nm = id_mark_end;     str = "</pwtag>"; };
-string = { nm = no_id_mark_end;  str = "config entry missing end mark: %32.32s\n"; };
-string = { nm = id_mark_fmt;     str = "<pwtag id=\"%s\""; };
-string = { nm = inv_cfg_perms;   str = "invalid config file permissions for %s: 0%o\n"; };
 string = { nm = inv_pwd;         str = "invalid password generated\n"; };
 string = { nm = load_opts;       str = "--load-opts"; };
 string = { nm = local_cfg;       str = "gnupwmgr.cfg"; };
@@ -98,37 +93,55 @@ string = { nm = malloc_z;        str = "malloc"; };
 string = { nm = no_home;         str = "$HOME not found"; };
 string = { nm = no_load_opts;    str = "--no-load-opts"; };
 string = { nm = no_mem_4_home;   str = "cannot obtain home directory\n"; };
-string = { nm = no_pwent;        str = "no password entry for uid %u"; };
 string = { nm = no_pwid_fmt;     str = "no '<pw-id>'s were specified.\n"; };
 string = { nm = no_seeds;        str = "No seeds were specified\n"; };
 string = { nm = open_z;          str = "open"; };
-string = { nm = pw_fmt;          str = "%-12s %s\n"; };
-string = { nm = pw_hdr_fmt;      str = "\nseed-tag     %s:\t%s\n"; };
+string = { nm = open_z;          str = "open"; };
+string = { nm = pwid_shared;     str = " (shared password)"; };
 string = { nm = pw_id_tag;       str = "<program per_pw_id>"; };
 string = { nm = pw_prompt;       str = "Please enter a password id:\n> "; };
+string = { nm = pwtag_z;         str = "<pwtag id="; };
 string = { nm = pw_today;        str = " (mod just now)"; };
 string = { nm = pw_undated;      str = " (pw undated)"; };
+string = { nm = rm_entry;        str = "Removing the following entry:\n"; };
+string = { nm = sec_mark;        str = "<shared/>"; };
+string = { nm = sec_pw_id;       str = "shared"; };
+string = { nm = sec_pw_type;     str = " shared"; };
+string = { nm = seed_mark;       str = "\n\n<seed>\n"; };
+string = { nm = stdin_out_z;     str = "stdin/out"; };
+string = { nm = s_ver_z;         str = "ver"; };
+string = { nm = tag_z;           str = "tag"; };
+string = { nm = text_z;          str = "text"; };
+
+// FORMATTING STRINGS
+
+string = { nm = bad_cfg_ent;     str = "invalid config entry: %s%s\n"; };
+string = { nm = bad_adj_typ_fmt; str = "cannot adjust %s option\n"; };
+string = { nm = cannot_stat_cfg; str = "cannot stat config file: '%s'\n"; };
+string = { nm = cclass_fmt;      str = "cclass = %s"; };
+string = { nm = cfg_insecure;    str = "config dir '%s' is insecure\n"; };
+string = { nm = cfg_missing_fmt; str = "config file '%s' is missing\n"; };
+string = { nm = default_all_fmt; str = "The %s password id has all default settings\n"; };
+string = { nm = dup_tag;         str = "duplicate tag: %s\n"; };
+string = { nm = hdr_hint;        str = "\nlogin id hint: %s"; };
+string = { nm = id_mark_fmt;     str = "<pwtag id=\"%s\""; };
+string = { nm = inv_cfg_perms;   str = "invalid config file permissions for %s: 0%o\n"; };
+string = { nm = no_id_mark_end;  str = "config entry missing end mark: %32.32s\n"; };
+string = { nm = no_pwent;        str = "no password entry for uid %u"; };
+string = { nm = opt_range_fmt;   str = "option type code %u is out of range\n"; };
+string = { nm = pw_fmt;          str = "%-12s %s\n"; };
+string = { nm = pw_hdr_fmt;      str = "\nseed-tag     %s:\t%s\n"; };
 string = { nm = pwid_cclass_fmt;    str = "%s>cclass    = =%s</pwtag>\n"; };
 string = { nm = pwid_hdr_fmt;       str = "password id '%s'%s\n"; };
 string = { nm = pwid_length_fmt;    str = "%s>length    = %u</pwtag>\n"; };
 string = { nm = pwid_login_id_fmt;  str = "%s>login-id  = '%s'</pwtag>\n"; };
 string = { nm = pwid_pbkdf2_fmt;    str = "%s date=\"%u\">use-pbkdf2 = %u</pwtag>\n"; };
 string = { nm = pwid_second_fmt;    str = "%s>shared</pwtag>\n"; };
-string = { nm = pwid_shared;        str = " (shared password)"; };
 string = { nm = pwid_specials_fmt;  str = "%s>specials  = '%s'</pwtag>\n"; };
-string = { nm = pwst_str_fmt;    str = "  %-10s %s\n"; };
-string = { nm = pwst_dig_fmt;    str = "  %-10s %u\n"; };
 string = { nm = pwst_dig_dft;    str = "  %-10s %u (default)\n"; };
-string = { nm = pwtag_z;         str = "<pwtag id="; };
-string = { nm = s_ver_z;         str = "ver"; };
-string = { nm = sec_mark;        str = "<shared/>"; };
-string = { nm = sec_pw_id;       str = "shared"; };
-string = { nm = sec_pw_type;     str = " shared"; };
-string = { nm = seed_mark;       str = "\n\n<seed>\n"; };
-string = { nm = stdin_out_z;     str = "stdin/out"; };
+string = { nm = pwst_dig_fmt;    str = "  %-10s %u\n"; };
+string = { nm = pwst_str_fmt;    str = "  %-10s %s\n"; };
 string = { nm = tag_fmt;         str = "<tag>%s</tag>"; };
 string = { nm = tag_gone_fmt;    str = "tag already removed: %s\n"; };
-string = { nm = tag_z;           str = "tag"; };
-string = { nm = text_z;          str = "text"; };
 string = { nm = time_fmt;        str = " (last mod %Y-%m-%d)"; };
-string = { nm = too_old_z;       str = "Ignoring the '%s' seed: it is too old."; };
+string = { nm = too_old_fmt;     str = "Ignoring the '%s' seed: it is too old."; };

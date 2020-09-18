@@ -84,7 +84,9 @@ export[2] =<<-_EOF_
 	static uintptr_t    post_cfg_setting    = 0UL;
 	static char const * rehash_date         = pw_undated;
 	static bool         have_stored_opts    = false;
-	static char *       cclass_define_str   = NULL;
+	static bool         update_stored_opts  = false;
+	static int          tweak_prev_cclass   = 0;
+	static int          tweak_prev_rehash   = 0;
 
 	typedef struct str_list str_list_t;
 	struct str_list {
@@ -344,24 +346,50 @@ flag = {
 
     arg-type    = set-member;
     keyword     = alpha, upper, lower, digit, special, // requirements
-                  no-special, no-alpha, no-triplets,   // prohibitions
-                  no-sequence,                         // prohibition
-                  pin, alnum,                          // abbreviations
-                  two-upper, two-lower, two-digit,     // two of
-                  two-special;                         //   requirements
+		  no-special, no-alpha, no-triplets,   // prohibitions
+		  no-sequence,                         // prohibition
+		  pin, alnum,                          // abbreviations
+		  two-upper, two-lower, two-digit,     // two of
+		  two-special;                         //   requirements
     arg-default = alpha, digit;
+
+    /*
+     * Take note of a '+' or '-' prefix. If it is there, the specified
+     * character classes will be added or removed from the current set.
+     * If the result is invalid, it will then be set to the current default.
+     */
+    flag-code[0] = <<- _EOCode_
+	    /*
+	     * The lead character is only examined from the command line
+	     */
+	    if (  (STATE_OPT(CCLASS) == OPTST_DEFINED)
+	       && (pOptDesc->optArg.argString != NULL)) {
+	        char * p = (char *)(uintptr_t)pOptDesc->optArg.argString;
+	        switch (pOptDesc->optArg.argString[0]) {
+	            case '-': tweak_prev_cclass = -1; *p = '='; break;
+	            case '+': tweak_prev_cclass =  1; *p = '='; break;
+	            default:  break;
+	        } // force the results to be only the specified bits
+	    }
+	_EOCode_;
+
+    flag-code[1] = <<- _EOCode_
+	    if (pOptions == &gnu_pw_mgrOptions)
+	        fix_cclass_bits(pOptDesc);
+	_EOCode_;
 
     doc = <<- _EOF_
 	This option augments or specifies which character classes either
 	must or must not appear in the final password.
 
-	Some sites disallow special characters, other sites require them, and
-	still others require them, but only certain ones.  If disallowed,
-	specify @code{no-special} and special characters will be replaced with
-	digits.  If @code{special} is specified specifically, then in the
-	absence of a '+' or '/' character (or alternates), one character will
-	be replaced with a hyphen.  Other characters may be substituted for
-	these three special characters with the @code{--specials} option.
+	Some sites disallow special characters, other sites require
+	them, and still others require them, but only certain ones.
+	If disallowed, specify @code{no-special} and special
+	characters will be replaced with digits.  If @code{special} is
+	specified specifically, then in the absence of a '+' or '/'
+	character (or their alternates), one character will be
+	replaced with a hyphen.  Other characters may be substituted
+	for these three special characters with the @code{--specials} option.
 
 	@noindent
 	Explanations of the keywords:
@@ -417,24 +445,6 @@ flag = {
 	characters may be specified this way.  ``two-alpha'' is not supported.
 	@end table
 	_EOF_;
-
-    flag-code[0] = <<- _EOCode_
-	    if (pOptDesc->optArg.argString != NULL) {
-	        switch (pOptDesc->optArg.argString[0]) {
-	        case '-': case '+':
-	            cclass_define_str = strdup(pOptDesc->optArg.argString);
-	            /* FALLTHROUGH */
-	        default:
-	            ;
-	            /* FALLTHROUGH */
-	        }
-	    }
-	_EOCode_;
-
-    flag-code[1] = <<- _EOCode_
-	    if (pOptions == &gnu_pw_mgrOptions)
-	        fix_cclass_bits(pOptDesc);
-	_EOCode_;
 };
 
 flag            = {
@@ -446,17 +456,40 @@ flag            = {
     flags-cant  = pbkdf2;
     no-preset;
 
-    doc = <<- _EOF_
-	By default, passwords are created with the SHA256 hash of the "seed
-        string", the password id and the tag text associated with the seed. If
-        not disabled, the pbkdf2 funcion (with SHA1 as the HMAC function) is
-        used to rehash the result a number of times. By default, this is done
-        10007 times.  This can be over-ridden by specifying a different count.
-	Changing the count will change the password and will mark the entry
-	with the date of the most recent password change.
+    flag-code[0] = <<- _EOCode_
+	    /*
+	     * this option can only appear on the command line.
+	     */
+	    if (pOptDesc->optArg.argString != NULL)
+	        switch (pOptDesc->optArg.argString[0]) {
+	        case '-':
+	            tweak_prev_rehash = -1;
+	            pOptDesc->optArg.argString++;
+	            break;
+	        case '+':
+	            tweak_prev_rehash =  1;
+	            pOptDesc->optArg.argString++;
+	            break;
+	        default:
+	            break;
+	        }
+	_EOCode_;
 
-	Please see RFC 2898 for a specification of the PBKDF2 (Password-Based
-	Key Derivation Function version 2) function.
+    doc = <<- _EOF_
+	By default, passwords are created with the SHA256 hash of the
+        "seed string", the password id and the tag text associated
+        with the seed. The pbkdf2 funcion (with SHA1 as the HMAC
+        function) is used to rehash the result a number of times. By
+        default, this is done 10007 times.  This can be changed by
+        specifying a different count, either with a count directly or
+        by prefixing the number with a '+' or '-' character, thus
+        adjusting the previous value.  Changing the count will change
+        the password and will mark the entry with the date of the most
+        recent password change. This is the preferred method for
+        changing passwords.
+
+	Please see RFC 2898 for a specification of the PBKDF2
+	(Password-Based Key Derivation Function version 2) function.
 	_EOF_;
 };
 

@@ -148,7 +148,7 @@ fix_cclass_bits(tOptDesc * od)
 	save_bits = od->optCookie;
 	save_bits_set = true;
 
-    } else if (save_bits_set)
+    } else if (save_bits_set && (tweak_prev_cclass == 0))
 	od->optCookie = save_bits;
 }
 
