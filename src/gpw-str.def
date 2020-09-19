@@ -67,6 +67,7 @@ string = { nm  = pin_too_big;
 // SHORT STRINGS
 
 string = { nm = alnum_pin_confl; str = "cclass 'pin' and 'alnum' conflict\n"; };
+string = { nm = alpha_digit;     str = "alpha + digit"; };
 string = { nm = argv_z;          str = "argv"; };
 string = { nm = bad_seed;        str = "the seed value was invalid\n"; };
 string = { nm = bad_vers;        str = "unparsable version number"; };

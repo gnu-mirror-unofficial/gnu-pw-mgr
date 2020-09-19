@@ -265,64 +265,89 @@ search_for_option(char * buf, char const * mark, size_t m_len, set_opt_enum_t ty
  * @param[in]  typ     the enumerated value of the searched for entry
  */
 static void
-adjust_option_val(char const * mark, size_t m_len, set_opt_enum_t typ)
+adjust_option_val(char const * mark, size_t m_len, set_opt_enum_t const typ)
 {
-    intptr_t     cc_cookie;
-    char *       buf;
-    tOptDesc *   od   = (typ == SET_CMD_CCLASS) ? &DESC(CCLASS) : &DESC(PBKDF2);
-    char *       scan = buf =
+    intptr_t     new_cc;
+    intptr_t     old_cc;
+    uint64_t     old_pbkdf2;
+    uint64_t     new_pbkdf2;
+    char *       buf =
         search_for_option(config_file_text, mark, m_len, typ);
 
-    if (buf == NULL)
-        return;
-
+    /*
+     * Stash the current values gotten from the command line.
+     * If the option is not in the config file, then set the
+     * "old" value to the default value.
+     */
     switch (typ) {
     case SET_CMD_CCLASS:
-        cc_cookie = (intptr_t)OPT_VALUE_CCLASS;
+        new_cc = (intptr_t)OPT_VALUE_CCLASS;
+        if (buf == NULL) {
+            old_cc = (intptr_t)(
+                HAVE_OPT(DEFAULT_CCLASS)
+                ? DESC(DEFAULT_CCLASS).optCookie
+                : CclassCookieBits );
+        }
         break;
 
     case SET_CMD_USE_PBKDF2:
+        new_pbkdf2 = OPT_VALUE_REHASH;
+        if (buf == NULL)
+            old_pbkdf2 = (intptr_t)PBKDF2_DFT_ARG;
         break;
 
     default:
         die(GNU_PW_MGR_EXIT_CODING_ERROR, bad_adj_typ_fmt, set_opt_name(typ));
     }
 
-    scan = strchr(buf, '>');
-    if (scan == NULL)
-        die(GNU_PW_MGR_EXIT_BAD_CONFIG, no_id_mark_end, buf);
-    (void) load_one_stored_opt(scan+1);
+    /*
+     * If there is an entry, then pull it out and stash the "old" value.
+     */
+    if (buf != NULL) {
+        char * scan = strchr(buf, '>');
+        if (scan == NULL)
+            die(GNU_PW_MGR_EXIT_BAD_CONFIG, no_id_mark_end, buf);
+
+        (void) load_one_stored_opt(scan+1);
+
+        switch (typ) {
+        case SET_CMD_CCLASS:
+            old_cc = OPT_VALUE_CCLASS;
+            break;
+        case SET_CMD_USE_PBKDF2:
+            old_pbkdf2 = OPT_VALUE_PBKDF2;
+            break;
+        }
+    }
 
     /*
-     * There's no need to mark the option as modified because this funciton
-     * is only called when the indicated option is on the command line.
+     * Now adjust the value and see if it has changed.
      */
     switch (typ) {
     case SET_CMD_CCLASS:
     {
-        intptr_t old = (intptr_t)OPT_VALUE_CCLASS;
         intptr_t new = (tweak_prev_cclass < 0)
-            ? (old & ~cc_cookie)
-            : (old | cc_cookie);
+            ? (old_cc & ~new_cc)
+            : (old_cc | new_cc);
 
-        if (old != new) {
-            DESC(CCLASS).fOptState = OPTST_DEFINED;
-            DESC(CCLASS).optCookie = new;
+        if (old_cc != new) {
+            DESC(CCLASS).fOptState &= OPTST_PERSISTENT_MASK;
+            DESC(CCLASS).fOptState |= OPTST_DEFINED;
+            DESC(CCLASS).optCookie  = (void*)new;
         }
         break;
     }
 
     case SET_CMD_USE_PBKDF2:
     {
-        uint64_t old = (intptr_t)OPT_VALUE_PBKDF2;
         uint64_t new = (tweak_prev_rehash < 0)
-            ? (old - OPT_VALUE_REHASH)
-            : (old + OPT_VALUE_REHASH);
+            ? (old_pbkdf2 - new_pbkdf2)
+            : (old_pbkdf2 + new_pbkdf2);
 
-        if (old != new) {
-            DESC(PBKDF2).fOptState = OPTST_DEFINED;
-            DESC(REHASH).fOptState = OPTST_DEFINED;
-            OPT_VALUE_REHASH       = new;
+        if (old_pbkdf2 != new) {
+            DESC(PBKDF2).fOptState &= OPTST_PERSISTENT_MASK;
+            DESC(PBKDF2).fOptState |= OPTST_DEFINED;
+            OPT_VALUE_PBKDF2        = new;
         }
         break;
     }
