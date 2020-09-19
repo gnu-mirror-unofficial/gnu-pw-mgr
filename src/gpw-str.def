@@ -80,7 +80,7 @@ string = { nm = digits_z;        str = "1234567890"; };
 string = { nm = end_text_mark;   str = "</text>"; };
 string = { nm = fopen_z;         str = "fopen"; };
 string = { nm = fread_z;         str = "fread"; };
-string = { nm = hdr_confirm;     str = "old-confirm:  new-confirm"; };
+string = { nm = hdr_confirm;     str = "confirmation answer"; };
 string = { nm = hdr_normal;      str = "password"; };
 string = { nm = home_cfg;        str = ".gnupwmgrrc"; };
 string = { nm = home_dom;        str = ".gnupwmgrdom"; };
