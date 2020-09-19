@@ -35,13 +35,13 @@ run_test() {
         gpw_arg="${gpw_arg}--dom $f "
     done > ${base_test_name}.base
 
-    $gpw ${gpw_arg} --dom - > ${base_test_name}.res
+    gpw ${gpw_arg} --dom - > ${base_test_name}.res
     cmp ${base_test_name}.res ${base_test_name}.base || \
         die $'miscompare in domain names:\n'"$(
             diff -u ${base_test_name}.out ${base_test_name}.base)"
 }
 
-init_test
+init_test dom
 trap die 0
 run_test
 trap '' 0

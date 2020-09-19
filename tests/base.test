@@ -22,109 +22,148 @@ set -x
 
 . "${srcdir}/test.funs"
 
+noisy_death() {
+    trap '' 0
+    set -x
+    exec 1>/dev/tty
+    printf "DEATH by $*\n\n$gpw_cfg %s\n" "${pw_opts:-: no command} $passwd_id"
+    test -f "$config_file" && cat "${config_file}" || echo "NO CONFIG: $config_file"
+    sleep 599
+    mv "$TEST_HOME" "${TEST_HOME}-DEAD"
+    die "$@"
+} >"${TEST_HOME}/death-rattle"
+
 ck_test() {
-    cat "${TEST_HOME}/.local/gnupwmgr.cfg"
     for f
     do
-        ct=`grep -F "$f" "${TEST_HOME}/.local/gnupwmgr.cfg" | wc -l` || \
-            die "'$f' not found in ${TEST_HOME}/.local/gnupwmgr.cfg"
+        ct=`grep -F "$f" "${config_file}" | wc -l` || \
+            noisy_death "'$f' not found in ${config_file}"
         test $ct -eq 1 || {
-            die "$ct '$f'-s in ${TEST_HOME}/.local/gnupwmgr.cfg"
+            noisy_death "$ct '$f'-s in ${config_file}"
 	}
     done
 }
 
-noisy_death() {
-  printf "DEATH by $*\n\n%s\n" "$(eval "$cmd")"
-  mv $TEST_HOME ${TEST_HOME}-DEAD
-  die "$@"
-}
-
-run_test() {
-    set -e
-    cfgfile="${TEST_HOME}/.local/gnupwmgr.cfg"
-    $gpw -t 'TEST ONLY TAG' --text \
+mk_config_file() {
+    gpw -t 'TEST ONLY TAG' --text \
         'This is only a test.  Were it real, you would likely know.  It is not.'
-    test -f "${cfgfile}" || \
-        die "config file not created:  ${TEST_HOME}/.local/gnupwmgr.cfg"
+    test -f "${config_file}" || \
+        die "config file not created:  ${config_file}"
     ck_test 'TEST ONLY TAG'
 
+    passwd_id='who'
     samp='JvyFIc2bRvUPRDCK'
-    cmd="$gpw --rehash=1 -i 'test-tag' who"
-    f=`eval "$cmd" | awk '/TEST ONLY TAG/{print $4}'`
+    pw_opts="--rehash=1 -i 'test-tag'"
+    f=`eval gpw "$pw_opts" $passwd_id | awk '/TEST ONLY TAG/{print $4}'`
     test "X$f" = "X$samp" || \
-        noisy_death $'passwords differ\n'"$samp became $f"$'\n\n'"$(eval "$cmd")"
+        noisy_death $'passwords differ\n'"$samp became $f"
     ck_test 'TEST ONLY TAG' "login-id  = 'test-tag'"
+}
 
+test_confirmation() {
     # Confirmation question test
     #
+    passwd_id='who'
     samp='jfiscesagqka'
-    cmd="$gpw --confirm dog who"
-    f=`eval "$cmd" | awk '/TEST ONLY TAG/{print $4}'`
+    pw_opts="--confirm dog"
+    f=`eval gpw "$pw_opts" $passwd_id | awk '/TEST ONLY TAG/{print $4}'`
     test "X$f" = "X$samp" || \
         noisy_death $'results for "--confirm dog" differ\n'"'$samp' became '$f'"
 
     samp='uvflfqdrjepf'
-    cmd="$gpw --confirm pet who"
-    f=`eval "$cmd" | awk '/TEST ONLY TAG/{print $4}'`
+    pw_opts="--confirm pet"
+    f=`eval gpw "$pw_opts" $passwd_id | awk '/TEST ONLY TAG/{print $4}'`
     test "X$f" = "X$samp" || \
         noisy_death $'results for "--confirm pet" differ\n'"$samp became $f"
+}
 
+test_triplet() {
     # Triplet fixup test
     #
-    trial='try 85'
+    passwd_id='try 85'
     samp='2Tjzv7jAvnZf2J5eaEoIFLn+8E3UNGPmGJ0uuu3K'
-    cmd="$gpw --rehash=1 -l40 $trial"
-    f=`eval "$cmd" | awk '/uuu/{print $4}'`
+    pw_opts="--rehash=1 -l40"
+    f=`eval gpw "$pw_opts" $passwd_id | awk '/uuu/{print $4}'`
     test "X$f" = "X$samp" || \
         noisy_death "wrong password found"
-    samp=`echo "$samp" | sed 's/uuu/uuv/'`
 
-    cmd="$gpw --cclass no-trip $trial"
-    f=`eval "$cmd" | awk '/uuv/{print $4}'`
+    samp=`echo "$samp" | sed 's/uuu/uuv/'`
+    pw_opts="--cclass no-trip"
+    f=`eval gpw "$pw_opts" $passwd_id | awk '/uuv/{print $4}'`
     test "X$f" = "X$samp" || \
         noisy_death "wrong tweaked password found"
+}
 
+test_char_select() {
     # selective chars fixup test
     # test "X$f" = "X${samp:23:1}${samp:15:1}${samp:7:1}${samp:2:1}" 
     #
-    cmd="$gpw --sel=24,16,8,3 $trial"
-    f=`eval "$cmd" | awk '/TEST ONLY/{print $4}'`
+    passwd_id='try 85'
+    pw_opts="--sel=24,16,8,3"
+    f=`eval gpw "$pw_opts" $passwd_id | awk '/TEST ONLY/{print $4}'`
     test "X$f" = "X+eAj" || \
         noisy_death "selection inconsistency"
 
-    samp=lMZ0FiVY
-    cmd="$gpw --cc=two-digit $trial 2"
-    f=`eval "$cmd" | awk '/TEST ONLY/{print $4}'`
-    test "X$f" = "X$samp" && \
+    passwd_id=who
+    samp=JvyF1c2b
+    pw_opts="--cc=two-digit -l 8"
+    f=`eval gpw "$pw_opts" $passwd_id | awk '/TEST ONLY/{print $4}'`
+    test "X$f" = "X$samp" || \
         noisy_death "requiring two digits failed"
+}
 
+test_sequential() {
     # Sequential fixup test
     #
-    trial='XX try 10185'
+    passwd_id='XX try 10185'
     samp='3AOS5o5011OuzGYlFrLI4B2FGHopslkngfRTdIHi'
-    cmd="$gpw -l40 --cc=no-spec $trial"
-    f=`eval "$cmd" | awk '/TEST ONLY/{print $4}'`
+    pw_opts="-l40 --cc=no-spec"
+    f=`eval gpw "$pw_opts" $passwd_id | awk '/TEST ONLY/{print $4}'`
     test "X$f" = "X$samp" || \
         noisy_death "Pt. 1 PBKDF2 inconsistency"
 
     samp=$(echo $samp | sed 's/FGH/FKH/')
-    cmd="$gpw --cc=no-spec+no-seq $trial"
-    f=`eval "$cmd" | awk '/TEST ONLY/{print $4}'`
+    pw_opts="--cc=+no-spec,no-seq"
+    echo "$gpw_cfg $pw_opts $passwd_id" > /dev/tty
+    f=`eval gpw "$pw_opts" $passwd_id | awk '/TEST ONLY/{print $4}'`
     test "X$f" = "X$samp" || \
         noisy_death "Pt. 2 PBKDF2 inconsistency"
-
-    $gpw -t 'TEST ONLY TAG'
-    test -f "${cfgfile}" || \
-        noisy_death "config file removed:  ${TEST_HOME}/.local/gnupwmgr.cfg"
-    grep -F 'TEST ONLY TAG'  "${cfgfile}" && \
-        noisy_death "'TEST ONLY TAG' seed remains in config file"
-
-    set +e
 }
 
-init_test
-trap die 0
+test_char_class() {
+    pw_opts="--cc=+upp,low"
+    eval gpw "$pw_opts" $passwd_id || \
+        noisy_death "command failed"
+
+    samp='upper + lower + digit + no-special + no-sequence'
+    pw_opts="--status"
+    f=`eval gpw "$pw_opts" $passwd_id | sed -n 's/ *cclass  *//p'`
+    test "X$f" = "X$samp" || \
+        noisy_death "adding alpha/nums failed:"$'\n'"'$f' is not '$samp'"
+}
+
+test_tag_removal() {
+    gpw -t 'TEST ONLY TAG'
+    test -f "${config_file}" || \
+        noisy_death "config file removed:  ${config_file}"
+    if grep -F 'TEST ONLY TAG'  "${config_file}" >&2
+    then noisy_death "'TEST ONLY TAG' seed remains in config file"
+    fi
+}
+
+run_test() {
+    set -e
+    mk_config_file
+    test_confirmation
+    test_triplet
+    test_char_select
+    test_sequential
+    test_char_class
+    test_tag_removal
+}
+
+init_test base
+trap noisy_death 0
 run_test
 trap '' 0
 cleanup

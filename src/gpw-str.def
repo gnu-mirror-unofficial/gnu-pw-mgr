@@ -142,6 +142,7 @@ string = { nm = pwid_specials_fmt;  str = "%s>specials  = '%s'</pwtag>\n"; };
 string = { nm = pwst_dig_dft;    str = "  %-10s %u (default)\n"; };
 string = { nm = pwst_dig_fmt;    str = "  %-10s %u\n"; };
 string = { nm = pwst_str_fmt;    str = "  %-10s %s\n"; };
+string = { nm = rehash_set_fmt;  str = "--rehash value has wrapped and set to %lu\n"; };
 string = { nm = tag_fmt;         str = "<tag>%s</tag>"; };
 string = { nm = tag_gone_fmt;    str = "tag already removed: %s\n"; };
 string = { nm = time_fmt;        str = " (last mod %Y-%m-%d)"; };
