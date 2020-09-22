@@ -16,6 +16,21 @@
 #include "sort-opts.h"
 #include "gpw-str.h"
 
+typedef enum {
+    HOME_DIR_IX = 0,
+    XDG_DATA_HOME_IX = 1,
+    XDG_CONFIG_HOME_IX = 2,
+    HOME_IX_CT
+} home_ix_t;
+
+typedef struct str_list str_list_t;
+struct str_list {
+    str_list_t *    next;
+    char            buf[0];
+};
+
+static char const * home_dirs[HOME_IX_CT] = { NULL };
+
 static char * find_cfg_name(void);
 
 #include "sort-opts.c"

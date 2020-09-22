@@ -1,0 +1,78 @@
+/* -*- Mode: C -*-
+ *
+ *  This file is part of gnu-pw-mgr.
+ *
+ *  Copyright (C) 2013-2018 Bruce Korb, all rights reserved.
+ *  This is free software. It is licensed for use, modification and
+ *  redistribution under the terms of the GNU General Public License,
+ *  version 3 or later <http://gnu.org/licenses/gpl.html>
+ *
+ * This file is generated.  gnu-pw-mgr is built with most all symbols
+ * having static scope and is compiled all at once.  So all the static
+ * functions are declared here and all the C files that are part of it
+ * are #included here at the bottom (with two exceptions: the main code
+ * gnu-pw-mgr.c and gpw-str.c, which is needed early).
+ */
+
+#ifndef GPW_FWD_GUARD
+#define GPW_FWD_GUARD 1
+
+#ifndef PVT_static
+#define PVT_static static
+#endif
+
+#ifdef __GNUC__
+# define UNLIKELY(_e) __builtin_expect ((_e), 0)
+# define ISLIKELY(_e) __builtin_expect ((_e), 1)
+#else
+# define UNLIKELY(_e) (_e)
+# define ISLIKELY(_e) (_e)
+#endif
+
+#define MIN_PW_LEN         8
+#define MIN_SEED_TEXT_LEN 64
+#define MARK_TEXT_LEN     24
+#define CONFIRM_LEN       12
+#define MIN_BUF_LEN ((256 / NBBY) + (256 / (NBBY * 2))) // 48
+#define VER_TO_INT(_maj, _min, _rev) \
+\	(((_maj)<<20) + ((_min)<<10) + (_rev))
+#define CCLASS_NO_THREE (CCLASS_NO_TRIPLETS | CCLASS_NO_SEQUENCE)
+#define SECONDS_IN_DAY  (60UL * 60UL * 24UL)
+
+#define MAX_REHASH_CT  100000
+
+typedef enum {
+    HOME_DIR_IX = 0,
+    XDG_DATA_HOME_IX = 1,
+    XDG_CONFIG_HOME_IX = 2,
+    HOME_IX_CT
+} home_ix_t;
+
+typedef struct str_list str_list_t;
+struct str_list {
+    str_list_t *    next;
+    char            buf[0];
+};
+////GLOBALS:
+
+static char const * home_dirs[HOME_IX_CT] = { NULL };
+static unsigned int const secure_mask     = S_IRWXG | S_IRWXO;
+static char const * config_file_name      = NULL;
+static char const   empty_config_data[]   = "";
+static char *       config_file_text      = (char *)(void *)empty_config_data;
+static size_t       config_file_size      = 0;
+static uintptr_t    post_cfg_setting      = 0UL;
+static char const * rehash_date           = pw_undated;
+static bool         have_stored_opts      = false;
+static bool         update_stored_opts    = false;
+static int          tweak_prev_cclass     = 0;
+static int          tweak_prev_rehash     = 0;
+
+static char *       dom_text      = NULL;
+static char const * dom_file_name = NULL;
+static struct stat  dom_file_stat = { .st_size = 0 };
+static off_t        dom_text_len  = 0;
+
+////CODE-FILES:
+
+#endif /* GPW_FWD_GUARD */

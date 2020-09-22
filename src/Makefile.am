@@ -33,11 +33,11 @@ lib_incs     	= -I$(top_srcdir)/lib -I$(top_srcdir)/src -I$(top_builddir)/lib
 ao_incs      	= -I$(top_srcdir)/libopts -I$(top_builddir)/libopts
 incs            = $(lib_incs) $(ao_incs)
 
-xtra_src        = <<<variable>>>
+xtra_src        = cclass.c cfg-file.c domains.c fix-pw.c pw-opts.c scribble.c \
+		seed.c wrap-libnettle.c fwd.h
 opts_src     	= opts.c opts.h
 opt_src      	= set-opt.c set-opt.h
 sort_opts_src   = sort-opts.c sort-opts.h
-scrib_src    	= scribble.c
 str_src         = gpw-str.c gpw-str.h
-gen_src      	= $(opts_src) $(opt_src) $(sort_opts_src) $(scrib_src) $(str_src)
+gen_src      	= $(opts_src) $(opt_src) $(sort_opts_src) $(str_src)
 EXTRA_DIST   	= $(gen_src) opts.def sort-opts.def gpw-str.def $(xtra_src)

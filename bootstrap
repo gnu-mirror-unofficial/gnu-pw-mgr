@@ -224,7 +224,7 @@ vc_ignore=
 
 # Source required external libraries:
 # Set a version string for this script.
-scriptversion=2018-07-31.15; # UTC
+scriptversion=2020-09-21.18; # UTC
 
 # General shell script boiler plate, and helper functions.
 # Written by Gary V. Vaughan, 2004
@@ -5420,7 +5420,7 @@ exit ${exit_status-$EXIT_SUCCESS}
 
 # Local variables:
 # mode: shell-script
-# sh-indentation: 2
+# sh-indentation: 4
 # eval: (add-hook 'before-save-hook 'time-stamp)
 # time-stamp-pattern: "500/scriptversion=%:y-%02m-%02d.%02H; # UTC"
 # time-stamp-time-zone: "UTC"

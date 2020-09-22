@@ -16,8 +16,6 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdio.h>
-
 #ifndef _
 #define _(_s) _s
 #endif
@@ -37,10 +35,12 @@ struct scrib_buf_s {
     unsigned char   sb_buf[1];
 };
 
-PVT_static scrib_buf_t *  bufs     = NULL;
-PVT_static scrib_buf_t ** next_buf = &bufs;
-PVT_static size_t const   hdr_sz   =
+static scrib_buf_t *  bufs     = NULL;
+static scrib_buf_t ** next_buf = &bufs;
+static size_t const   hdr_sz   =
     (&(((scrib_buf_t *)NULL)->sb_buf[0])) - ((unsigned char *)NULL);
+
+////PULL-HEADERS:
 
 /**
  * Initialize scribble space.  This ensures that the library module globals

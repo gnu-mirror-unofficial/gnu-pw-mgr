@@ -55,46 +55,6 @@ more-help-value = M;  // use '-M' not '-!'
 load-opts-value;      // no flag character for this option
 disable-save;         // disable option state saving
 
-export[2] =<<-_EOF_
-	#include "gpw-str.c"
-
-	#define MIN_PW_LEN         8
-	#define MIN_SEED_TEXT_LEN 64
-	#define MARK_TEXT_LEN     24
-	#define CONFIRM_LEN       12
-	#define MIN_BUF_LEN ((256 / NBBY) + (256 / (NBBY * 2))) // 48
-	#define VER_TO_INT(_maj, _min, _rev) \
-	\	(((_maj)<<20) + ((_min)<<10) + (_rev))
-	#define CCLASS_NO_THREE (CCLASS_NO_TRIPLETS | CCLASS_NO_SEQUENCE)
-        #define SECONDS_IN_DAY  (60UL * 60UL * 24UL)
-
-	#ifdef __GNUC__
-        # define UNLIKELY(_e) __builtin_expect ((_e), 0)
-        # define ISLIKELY(_e) __builtin_expect ((_e), 1)
-        #else
-        # define UNLIKELY(_e) (_e)
-        # define ISLIKELY(_e) (_e)
-        #endif
-
-	static unsigned int const secure_mask   = S_IRWXG | S_IRWXO;
-	static char const * config_file_name    = NULL;
-	static char const   empty_config_data[] = "";
-	static char *       config_file_text    = (char *)(void *)empty_config_data;
-	static size_t       config_file_size    = 0;
-	static uintptr_t    post_cfg_setting    = 0UL;
-	static char const * rehash_date         = pw_undated;
-	static bool         have_stored_opts    = false;
-	static bool         update_stored_opts  = false;
-	static int          tweak_prev_cclass   = 0;
-	static int          tweak_prev_rehash   = 0;
-
-	typedef struct str_list str_list_t;
-	struct str_list {
-	\    str_list_t *    next;
-	\    char            buf[0];
-	};
-	_EOF_;
-
 /*
  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
  #
@@ -451,42 +411,43 @@ flag            = {
     name        = rehash;
     value       = r;
     arg-type    = number;
+    // IF you change the maximum limit here, be sure to change MAX_REHASH_CT
+    //
     arg-range   = '1->100000';
-    descrip     = 'rehash password with PKCS#5 PBKDF2';
-    flags-cant  = pbkdf2;
+    descrip     = 'Change the password rehash count';
     no-preset;
 
     flag-code[0] = <<- _EOCode_
-	    /*
-	     * this option can only appear on the command line.
-	     */
-	    if (pOptDesc->optArg.argString != NULL)
-	        switch (pOptDesc->optArg.argString[0]) {
-	        case '-':
-	            tweak_prev_rehash = -1;
-	            pOptDesc->optArg.argString++;
-	            break;
-	        case '+':
-	            tweak_prev_rehash =  1;
-	            pOptDesc->optArg.argString++;
-	            break;
-	        default:
-	            break;
-	        }
+	\    /*
+	\     * this option can only appear on the command line.
+	\     */
+	\    if (pOptDesc->optArg.argString != NULL)
+	\        switch (pOptDesc->optArg.argString[0]) {
+	\        case '-':
+	\            tweak_prev_rehash = -1;
+	\            pOptDesc->optArg.argString++;
+	\            break;
+	\        case '+':
+	\            tweak_prev_rehash =  1;
+	\            pOptDesc->optArg.argString++;
+	\            break;
+	\        default:
+	\            break;
+	\        }
 	_EOCode_;
 
     doc = <<- _EOF_
-	By default, passwords are created with the SHA256 hash of the
-        "seed string", the password id and the tag text associated
-        with the seed. The pbkdf2 funcion (with SHA1 as the HMAC
-        function) is used to rehash the result a number of times. By
-        default, this is done 10007 times.  This can be changed by
-        specifying a different count, either with a count directly or
-        by prefixing the number with a '+' or '-' character, thus
-        adjusting the previous value.  Changing the count will change
+
+	Passwords are created with the SHA256 hash of the "seed
+        string", the password id, and the tag text associated with the
+        seed. The result is then "rehashed" with the pbkdf2 function.
+        By default, this is done 10007 times.  This can be changed by
+        specifying a different count between 1 and 100,000.  You can
+        change this either directly with a count or by prefixing a
+        number with a '+' or '-' character. The prefix will cause the
+        previous value to be adjusted.  Changing the count will change
         the password and will mark the entry with the date of the most
-        recent password change. This is the preferred method for
-        changing passwords.
+        recent password change.
 
 	Please see RFC 2898 for a specification of the PBKDF2
 	(Password-Based Key Derivation Function version 2) function.
@@ -511,7 +472,8 @@ flag            = {
     no-command;
 
     doc = <<- _EOF_
-	This is the deprecated spelling for the -r/--rehash option.
+	This option is for internal use only. The rehash count is stored
+	in the configuration file as a "pbkdf2" value.
 	_EOF_;
 };
 
@@ -530,19 +492,22 @@ flag            = {
 	_EOCode_;
 
     doc = <<- _EOF_
-	The password is a base64 encoding of a sha256 hash of various inputs.
-	Base64 encoding uses '+' and '/' characters and when this program is
-	required to have at least one special character in the result, it will
-	replace one character with a hyphen (@code{-}).
+	The computed password is a base64 encoding of a sha256 hash of
+	various inputs.  Base64 encoding uses '+' and '/'
+	characters. However, when this program is required to have at
+	least one special character in the result, and neither the '+'
+	nor '-' get encoded, one character will be replaced with a
+	hyphen (@code{-}).
 
-	However, some web sites require special characters and constrain them
-	to be in a particular set that does not include these three: @samp{/+-}.
-	Therefore, specify this option with exactly three characters in the
-	string argument.  They will be used to replace the three characters
-	above.  The first two may be the same, but the third @i{must} be
-	different from the first two.  This option is accepted, but serves
-	no purpose if @code{no-special} has been specified in the
-	@code{--cclass} option.
+	Some web sites require particular special characters in their
+	passwords that do not include these three default characters.
+	For those passwords, specify this option with exactly three
+	characters in the string argument.  They will be used to
+	replace the three characters above.  The first two may be the
+	same, but the third @i{must} be different from the first two.
+	This option is accepted, but serves no purpose if
+	@code{no-special} has been specified in the @code{--cclass}
+	option.
 	_EOF_;
 };
 
@@ -895,27 +860,3 @@ doc-section = {
 	Password ids are not stored anywhere.
 	_EndOfText_;
 };
-
-export[0] = <<- _EOF_
-	
-	#include <ctype.h>
-	#include <errno.h>
-	#include <fcntl.h>
-	#include <inttypes.h>
-	#include <pwd.h>
-	#include <stdbool.h>
-	#include <stdio.h>
-	#include <stdlib.h>
-	#include <stdnoreturn.h>
-	#include <string.h>
-	#include <sys/mman.h>
-	#include <sys/stat.h>
-	#include <sys/types.h>
-	#include <termios.h>
-	#include <time.h>
-	#include <unistd.h>
-
-	#include "base64.h"
-	#include "gc.h"
-	#include "sha256.h"
-	_EOF_;

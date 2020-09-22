@@ -19,6 +19,8 @@
  *  You should have received a copy of the GNU General Public License along
  *  with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+////PULL-HEADERS:
+
 #ifdef HAVE_LIBNETTLE
 
 #include <nettle/pbkdf2.h>
@@ -38,8 +40,9 @@ struct gpw_key_frag {
     size_t              size;
     unsigned char       data[0];
 };
- static gpw_key_frag_t * data_chain = NULL;
- static gpw_key_frag_t ** next_gpw_key_ptr = &data_chain;
+
+PVT_static gpw_key_frag_t * data_chain = NULL;
+PVT_static gpw_key_frag_t ** next_gpw_key_ptr = &data_chain;
 
 static void
 gpw_init_ctx(struct sha256_ctx *ctx)

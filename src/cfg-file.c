@@ -20,7 +20,21 @@
  *  with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+////PULL-HEADERS:
+
 #ifndef SORT_PW_CFG // code for gnu-pw-mgr only
+
+/**
+ * Set the name of the configure file.
+ * @param[in] nm  name to set it to
+ */
+static void
+set_config_name(char const * nm)
+{
+    config_file_name = strdup(nm);
+    if (config_file_name == NULL)
+        nomem_err(strlen(nm), "file name");
+}
 
 /**
  * Gain access to the config file.  \a set_config_name must have been
@@ -50,18 +64,6 @@ access_config_file(void)
         fserr(GNU_PW_MGR_EXIT_BAD_CONFIG, cfg_immutable, config_file_name);
 
     return config_file_name;
-}
-
-/**
- * Set the name of the configure file.
- * @param[in] nm  name to set it to
- */
-static void
-set_config_name(char const * nm)
-{
-    config_file_name = strdup(nm);
-    if (config_file_name == NULL)
-        nomem_err(strlen(nm), "file name");
 }
 
 /**
@@ -115,8 +117,6 @@ load_config_file(void)
     }
 }
 
-#define config_file_name config_file_name used in invalid context
-#define config_file_size config_file_size used in invalid context
 #endif // not SORT_PW_CFG only
 
 /**
@@ -129,11 +129,12 @@ load_config_file(void)
  * It should not be deallocated.
  */
 static char const *
-find_home(void)
+find_home_dir(void)
 {
     char const * res;
+    struct stat sbf;
 
-#ifndef SORT_PW_CFG // no --seed-file option for sort
+#ifndef SORT_PW_CFG // no --config-file option for sort
     if (HAVE_OPT(CONFIG_FILE)) {
         char * p = strdup(OPT_ARG(CONFIG_FILE));
         if (p == NULL)
@@ -146,9 +147,10 @@ find_home(void)
          */
         if (p != NULL)
             *p = NUL;
-        else
+        else {
+            p = (char *)(intptr_t)res;
             strcpy(p, ".");
-
+        }
     }
     else
 #endif // SORT_PW_CFG defined
@@ -162,11 +164,15 @@ find_home(void)
 
 # else
         res = strdup(getenv("HOME"));
+        if (res == NULL)
+            die(GNU_PW_MGR_EXIT_HOMELESS, no_pwent, (unsigned int)getuid());
 # endif
     }
 
-    if (res == NULL)
-        die(GNU_PW_MGR_EXIT_NO_MEM, no_mem_4_home);
+    if (  (stat(res, &sbf) != 0)
+       || (! S_ISDIR(sbf.st_mode)))
+
+        die(GNU_PW_MGR_EXIT_HOMELESS, no_home);
 
     return res;
 }
@@ -176,33 +182,30 @@ set_cfg_dir(bool * have_local)
 {
     char * fname;
 
-    char const * home = find_home();
+    home_dirs[HOME_DIR_IX]        = find_home_dir();
+    home_dirs[XDG_DATA_HOME_IX]   = getenv("XDG_DATA_HOME");
+    home_dirs[XDG_CONFIG_HOME_IX] = getenv("XDG_CONFIG_HOME");
+
     struct stat sbf;
     size_t fname_len = home_cfg_LEN + local_cfg_LEN + local_dir_LEN + 3;
-
-    if (  (home == NULL)
-       || (stat(home, &sbf) != 0)
-       || (! S_ISDIR(sbf.st_mode)))
-
-        die(GNU_PW_MGR_EXIT_HOMELESS, no_home);
 
 #ifndef SORT_PW_CFG
     if (HAVE_OPT(CONFIG_FILE)) {
         size_t l = strlen(OPT_ARG(CONFIG_FILE)) + 1;
         fname = xscribble_get(l);
-        strcpy(fname, home);
+        strcpy(fname, home_dirs[HOME_DIR_IX]);
         return fname;
     }
 #endif // ! SORT_PW_CFG
 
-    fname = xscribble_get(fname_len + strlen(home));
+    fname = xscribble_get(fname_len + strlen(home_dirs[HOME_DIR_IX]));
 
     /*
      * fname is now allocated to the size we need.
      * now fill it in
      */
-    fname_len =  strlen(home);
-    memcpy(fname, home, fname_len);
+    fname_len =  strlen(home_dirs[HOME_DIR_IX]);
+    memcpy(fname, home_dirs[HOME_DIR_IX], fname_len);
     fname[fname_len++] = '/';
     memcpy(fname + fname_len, local_dir, local_dir_LEN + 1);
 
@@ -279,35 +282,6 @@ find_cfg_name(void)
     set_config_name(fname);
     return fname;
 }
-
-#ifndef SORT_PW_CFG // code for gnu-pw-mgr only
-
-/**
- * Figure out the name of the domain name file.
- * See find_cfg_name() above.
- *
- * @returns  the name in a scribble buffer.  Copy it out to save it.
- */
-static char *
-find_dom_file(void)
-{
-#ifndef SORT_PW_CFG
-    if (HAVE_OPT(CONFIG_FILE)) {
-        (void)set_cfg_dir(NULL);
-        return strdup(OPT_ARG(CONFIG_FILE));
-    }
-#endif // ! SORT_PW_CFG
-
-    {
-        bool   have_local;
-        char * fname     = set_cfg_dir(&have_local);
-        size_t fname_len = strlen(fname);
-
-        strcpy(fname + fname_len, have_local ? local_dom : home_dom);
-        return fname;
-    }
-}
-#endif
 
 /*
  * Local Variables:

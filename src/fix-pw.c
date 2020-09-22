@@ -22,6 +22,8 @@
 
 typedef enum { CC_UPPER, CC_LOWER, CC_DIGIT, CC_SPECIAL, CT_CC } ccl_t;
 
+////PULL-HEADERS:
+
 /**
  *  Make sure than any triple characters get fiddled into something with
  *  at most two same characters in a row.
