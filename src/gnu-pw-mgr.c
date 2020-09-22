@@ -180,7 +180,8 @@ get_rehashed_pw(char * buf, size_t bsz,
     if (conf_len > 0)
         memcpy(hash_source + stag_len + pwid_len, OPT_ARG(CONFIRM), conf_len);
 
-    rc = gc_pbkdf2_sha1(hash_source, hash_src_len,
+    rc = gc_pbkdf2_hmac(GC_SHA1,
+                        hash_source, hash_src_len,
                         salt,        salt_len,
                         OPT_VALUE_PBKDF2,
                         hash_output, hash_out_len);
