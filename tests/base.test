@@ -18,7 +18,6 @@
 #  with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 readonly testname=`basename $0`
-set -x
 
 . "${srcdir}/test.funs"
 
@@ -28,8 +27,6 @@ noisy_death() {
     exec 1>/dev/tty
     printf "DEATH by $*\n\n$gpw_cfg %s\n" "${pw_opts:-: no command} $passwd_id"
     test -f "$config_file" && cat "${config_file}" || echo "NO CONFIG: $config_file"
-    sleep 599
-    mv "$TEST_HOME" "${TEST_HOME}-DEAD"
     die "$@"
 } >"${TEST_HOME}/death-rattle"
 
