@@ -28,25 +28,35 @@ die() {
 } 1>&2
 
 cleanup() {
-    rm -rf ${base_test_name}.base ${base_test_name}.res ${TEST_HOME}
+    rm -f ${base_test_name}.base ${base_test_name}.res ${base_test_name}.log
+    $VERBOSE || rm -rf ${TEST_HOME}
 }
 
 init_test() {
     PS4='+T=${FUNCNAME:-=}-$LINENO> '
     base_test_name=${testname%.test}
     PATH=`cd ../src && pwd`:${PATH}
-    rm -rf ${TMPDIR:-/tmp}/gpw-$1-??????/ ${TMPDIR:-/tmp}/gpw-$1-??????-DEAD/
-    TEST_HOME=`mktemp -d ${TMPDIR:-/tmp}/gpw-XXXXXX` || {
-        TEST_HOME=${TMPDIR:-/tmp}/gpw-$1-$$
+    temp_pat=${TMPDIR:-/tmp}/gpw-$1-??????
+    eval rm -rf $temp_pat
+    TEST_HOME=`mktemp -d ${temp_pat//\?/X}` || {
+        TEST_HOME=${temp_pat//\?*/$$}
         mkdir ${TEST_HOME} || die "cannot make $TEST_HOME directory"
     }
     chmod -R 700 ${TEST_HOME}
+    case "X$VERBOSE" in
+        Xt* | X1* ) set -x ;;
+    esac
+    case $- in
+        *x* ) VERBOSE=true ;;
+        * ) VERBOSE=false ;;
+    esac
+    $VERBOSE && {
+        test -t 2 || exec 2> ${TEST_HOME}/xtrace.log
+    }
     mkdir "${TEST_HOME}/.local" || die "FAILED: mkdir ${TEST_HOME}/.local"
     chmod 700 "${TEST_HOME}/.local"
     export TEST_HOME
-    unset CDPATH || {
-        test -z "$CDPATH" || CDPATH=''
-    }
+    unset CDPATH || CDPATH=''
     gpw_exe=`cd ../src ; pwd`/gnu-pw-mgr
     config_file="${TEST_HOME}/.local/gnupwmgr.cfg"
     gpw_cfg="$gpw_exe --config-file=$config_file"
