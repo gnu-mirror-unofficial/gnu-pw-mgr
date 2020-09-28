@@ -65,7 +65,7 @@ that describes a browser plug-in that is substantially similar to this program.
 * Introduction::                Introduction to password management
 * gnu-pw-mgr Invocation::       Invoking gnu-pw-mgr
 * sort-pw-cfg Invocation::      Invoking sort-pw-cfg
-* warning warning::             Warnings
+* warning warning::             Getting Started and Warnings
 * GNU FDL::                     GNU Free Documentation License
 @end menu
 

@@ -222,6 +222,11 @@ flag            = {
 	in the configuration file. This means that if you rely on all
 	defaults for some login (you never provided any "password
 	options" for the id), the generated password *might* change.
+
+	You cannot adjust previous values. The classes you select will
+	become the default character classes from then on. Previous
+	password ids will continue using the value assigned when the
+	password was first created.
 	_EOF_;
 };
 

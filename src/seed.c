@@ -146,34 +146,78 @@ ver_str_to_number(void)
 }
 
 /**
+ * emit the config file header and return a pointer to the end of header
+ * marker. There is no pre-existing default cclass. There may not be an
+ * end-of-header marker. Never return NULL.
+ *
+ * @param fp output file pointer
+ * @returns a pointer to the remainder of the config file text
+ */
+static char const *
+skip_cfg_header(FILE * fp)
+{
+    char const * end_hdr = strstr(config_file_text, end_seed_mark);
+    if (end_hdr == NULL)
+	die(GNU_PW_MGR_EXIT_CODING_ERROR, bad_seed);
+
+    end_hdr += end_seed_mark_LEN;
+    while (*end_hdr == NL) end_hdr++;
+
+    /* write through to the end of the seed marker */
+    fwrite(config_file_text, end_hdr - config_file_text, 1, fp);
+    /* return a pointer to the end mark */
+    return end_hdr;
+}
+
+/**
+ * Look for a pre-existing default cclass
+ * If not found, return NULL. If found, write all the text before it
+ * and return a pointer to the text after it.
+ *
+ * @param fp output file pointer
+ * @returns a pointer to the remainder of the config file text
+ */
+static char const *
+replace_default_cclass(FILE * fp)
+{
+    char const * old_cc = strstr(config_file_text, default_cclass);
+    if (old_cc == NULL)
+	return old_cc;
+    /* write up to the previous default_cclass */
+    fwrite(config_file_text, old_cc - config_file_text, 1, fp);
+    old_cc = strstr(old_cc + default_cclass_LEN, default_cclass + 1);
+    if (old_cc == NULL)
+	die(GNU_PW_MGR_EXIT_CODING_ERROR, bad_default_cc);
+    old_cc += default_cclass_LEN - 1;
+    while (old_cc[0] == NL) old_cc++;
+    return old_cc;
+}
+
+/**
  * add or replace the default character class for new passwords
  */
 static void
 set_default_cclass(void)
 {
+    FILE * fp;
     char const * cfg_file;
+    char const * scan;
+
     load_config_file();
     cfg_file = access_config_file();
-    FILE * fp = fopen(cfg_file, "w");
+    fp       = fopen(cfg_file, "w");
     if (fp == NULL)
 	fserr(GNU_PW_MGR_EXIT_NO_CONFIG, fopen_z, cfg_file);
 
+    scan = replace_default_cclass(fp);
+    if (scan == NULL)
+	scan = skip_cfg_header(fp);
     fprintf(fp, default_cclass_fmt, OPT_ARG(DEFAULT_CCLASS));
-    do {
-	char const * old_cc = strstr(config_file_text, default_cclass);
-	if (old_cc == NULL)
-	    break;
+    /* write out the remaining text */
+    fputs(scan, fp);
 
-	/* skip over the previous default_cclass */
-	fwrite(config_file_text, config_file_text - old_cc, 1, fp);
-	old_cc = strstr(old_cc + default_cclass_LEN, default_cclass+1);
-	if (old_cc == NULL)
-	    fserr(GNU_PW_MGR_EXIT_NO_CONFIG, fopen_z, cfg_file);
-	fputs(old_cc + default_cclass_LEN - 1, fp);
-    } while (0);
-
-    fputs(config_file_text, fp);
-    fclose(fp);
+    if (fclose(fp) != 0)
+	fserr(GNU_PW_MGR_EXIT_BAD_CONFIG, fclose_z, cfg_file);
 }
 
 /**
@@ -193,7 +237,7 @@ add_seed(void)
 	fserr(GNU_PW_MGR_EXIT_NO_CONFIG, fopen_z, cfg_file);
 
     /*
-     * The new tag must be unique. Delete the old one first.
+     * The new tag must be unique. Ensure any old one is gone.
      */
     {
         char * tag = scribble_get(tag_fmt_LEN + strlen(OPT_ARG(TAG)));
@@ -210,8 +254,13 @@ add_seed(void)
 	fprintf(fp, cfg_fmt, OPT_ARG(TAG), seed_ver, marker, seed_txt);
     }
 
-    fputs(config_file_text, fp);
-    fclose(fp);
+    if (config_file_text[0] != NUL)
+	fputs(config_file_text, fp);
+    else
+	fwrite(pw_id_tag, pw_id_tag_LEN, 1, fp);
+
+    if (fclose(fp) != 0)
+	fserr(GNU_PW_MGR_EXIT_BAD_CONFIG, fclose_z, cfg_file);
 }
 
 /**
@@ -260,6 +309,7 @@ rm_seed(void)
             prune = strstr(tag, pw_id_tag);
         if (prune != NULL)
             fputs(prune, fp);
-        fclose(fp);
+	if (fclose(fp) != 0)
+	    fserr(GNU_PW_MGR_EXIT_BAD_CONFIG, fclose_z, cfg_file);
     }
 }
