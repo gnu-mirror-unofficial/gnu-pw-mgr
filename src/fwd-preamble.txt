@@ -45,6 +45,9 @@ typedef enum {
     HOME_DIR_IX = 0,
     XDG_DATA_HOME_IX = 1,
     XDG_CONFIG_HOME_IX = 2,
+#ifdef __apple__
+    APPLE_LOCAL_IX = 3,
+#endif
     HOME_IX_CT
 } home_ix_t;
 

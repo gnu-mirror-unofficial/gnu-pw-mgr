@@ -51,6 +51,7 @@ init_test() {
         * ) VERBOSE=false ;;
     esac
     $VERBOSE && {
+        : xtrace to ${TEST_HOME}/xtrace.log
         test -t 2 || exec 2> ${TEST_HOME}/xtrace.log
     }
     mkdir "${TEST_HOME}/.local" || die "FAILED: mkdir ${TEST_HOME}/.local"

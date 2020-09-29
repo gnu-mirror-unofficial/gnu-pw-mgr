@@ -1,4 +1,6 @@
-/*
+/**
+ * @file cfg-file.c
+ *
  *  This file is part of gnu-pw-mgr.
  *
  *  Copyright (C) 2013-2018 Bruce Korb, all rights reserved.
@@ -21,6 +23,11 @@
  */
 
 ////PULL-HEADERS:
+
+#ifndef MAXPATHLEN
+# define MAXPATHLEN 4096
+#endif
+#define MAX_CFG_NAME_SIZE 32
 
 #ifndef SORT_PW_CFG // code for gnu-pw-mgr only
 
@@ -153,19 +160,19 @@ find_home_dir(void)
         }
     }
     else
-#endif // SORT_PW_CFG defined
+#endif // SORT_PW_CFG not defined
 
     {
 # if defined(HAVE_GETPWUID)
         struct passwd * pwd = getpwuid(getuid());
         if (pwd == NULL)
-            die(GNU_PW_MGR_EXIT_HOMELESS, no_pwent, (unsigned int)getuid());
+            die(GNU_PW_MGR_EXIT_HOMELESS, no_pwent_fmt, (unsigned int)getuid());
         res = strdup(pwd->pw_dir);
 
 # else
         res = strdup(getenv("HOME"));
         if (res == NULL)
-            die(GNU_PW_MGR_EXIT_HOMELESS, no_pwent, (unsigned int)getuid());
+            die(GNU_PW_MGR_EXIT_HOMELESS, no_home);
 # endif
     }
 
@@ -177,58 +184,240 @@ find_home_dir(void)
     return res;
 }
 
+/**
+ * Search one directory for our config file
+ *
+ * @param[in]  home           the config file home directory (maybe)
+ * @param[out] used_cfg_name  whether cfg_name or rc_name was used
+ * @param[in]  check_cfg_file whether we can stop hunting without a config file
+ *
+ * @returns a buffer with the config file home directory name but also
+ *          with enough space in it to append the config file name.
+ */
 static char *
-set_cfg_dir(bool * have_local)
+check_home_dir(char const * home, bool * used_cfg_name, bool check_cfg_file)
+{
+    char name_buf[MAXPATHLEN];
+    struct stat sbf;
+    char * suffix;
+    size_t home_len = strlen(home);
+    bool   use_cfg_name = false;
+
+    if ((stat(home, &sbf) != 0) || ! S_ISDIR(sbf.st_mode))
+        return NULL;
+
+    memcpy(name_buf, home, home_len);
+    suffix = name_buf + home_len;
+
+    /*
+     * IF we are looking at the real home directory, check for a ".local"
+     * subdirectory. If it is there, always append it and use that.
+     */
+    if (home != home_dirs[HOME_DIR_IX])
+        use_cfg_name = true;
+    else
+        do {
+            strcpy(suffix, local_dir);
+            if (stat(name_buf, &sbf) != 0)
+                break; // No such name
+
+            if (! S_ISDIR(sbf.st_mode))
+                break; // Not a directory
+
+            /*
+             * Make sure directory permissions are correct
+             */
+            if ((sbf.st_mode & secure_mask) != 0)
+                die(GNU_PW_MGR_EXIT_PERM, inv_cfg_perms, home,
+                    (unsigned int)(sbf.st_mode & 0777));
+
+            /*
+             * Incorporate ".local" into the name
+             */
+            suffix += local_dir_LEN;
+            use_cfg_name = true;
+        } while (false);
+
+    /*
+     * See if the config file exists in the directory.
+     * if it does not, this is only correct when we are planting
+     * a new seed (which never happens with sort-pw-cfg).
+     */
+    *(suffix++) = '/';
+    strcpy(suffix, use_cfg_name ? cfg_fname : rc_fname);
+    if (stat(name_buf, &sbf) != 0) {
+
+        /*
+         * IF we can't find the config file, tell our caller to keep
+         * trying in case another directory has the config file.
+         */
+        if (! check_cfg_file)
+            return NULL;
+
+#ifndef SORT_PW_CFG
+        if (HAVE_OPT(SEED))
+            goto dir_checks_out;
+        /*
+         * We're not adding a seed so we cannot be creating a new
+         * config file, but we can't find one either. Keep looking.
+         */
+#endif // ! SORT_PW_CFG
+
+        return NULL;
+    }
+
+    /*
+     * Make sure the file is properly secured. (only read and only by user)
+     */
+    if ((sbf.st_mode & (secure_mask | S_IWUSR | S_IXUSR)) != 0)
+        die(GNU_PW_MGR_EXIT_PERM, inv_cfg_perms, name_buf,
+            (unsigned int)(sbf.st_mode & 0777));
+
+dir_checks_out:
+
+    {
+        char * res;
+        home_len = suffix - name_buf;
+        res = xscribble_get(home_len + MAX_CFG_NAME_SIZE);
+        memcpy(res, name_buf, home_len);
+        res[home_len]  = NUL; // leave trailing slash
+        *used_cfg_name = use_cfg_name;
+        return res;
+    }
+}
+
+#ifdef __apple__
+/**
+ * Search in Apple's favorite place to stash config files.
+ */
+static void
+find_apple_cfg_dir(void)
+{
+    size_t hd_len = strlen(home_dirs[HOME_DIR_IX]);
+    char * p;
+    {
+        size_t buf_sz = hd_len + apple_cfg_dir_LEN + MAX_CFG_NAME_SIZE;
+        p      = malloc(buf_sz);
+        if (p == NULL)
+            nomem_err(buf_sz, "file name");
+    }
+    home_dirs[APPLE_LOCAL_IX] = p;
+    memcpy(p, home_dirs[HOME_DIR_IX], hd_len);
+
+    /*
+     * Copy in the directory name with the terminating NUL.
+     */
+    p += hd_len;
+    memcpy(p, apple_cfg_dir, apple_cfg_dir_LEN + 1);
+    p = strrchr(p, '/');
+    if (p == NULL)
+        die(GNU_PW_MGR_EXIT_CODING_ERROR, bad_apple_cfgd);
+
+    {
+        struct stat sbf;
+
+        /*
+         * Remove the last name in the path and verify we have a directory,
+         * then restore the directory separator
+         */
+        *p = NUL;
+        if (  (stat(home_dirs[APPLE_LOCAL_IX], &sbf) != 0)
+           || (! S_ISDIR(sbf.st_mode)))
+
+            die(GNU_PW_MGR_EXIT_HOMELESS, no_apple_cfgd, apple_cfg_dir);
+        *p = '/';
+
+        /*
+         * The full path must exist and be a directory, or else
+         * we have to be able to create that directory.
+         */
+        if (stat(home_dirs[APPLE_LOCAL_IX], &sbf) == 0) {
+            if (! S_ISDIR(sbf.st_mode))
+                die(GNU_PW_MGR_EXIT_NO_CONFIG,
+                    no_apple_cfgd, apple_cfg_dir);
+        } else {
+            if (mkdir(home_dirs[APPLE_LOCAL_IX], 0700) != 0)
+                fserr(GNU_PW_MGR_EXIT_BAD_CONFIG, mkdir_z,
+                      home_dirs[APPLE_LOCAL_IX]);
+        }
+    }
+}
+#endif // __apple__
+
+/**
+ * figure out where the config file has to live
+ *
+ * @param[out] used_cfg_name boolen to tell caller whether to use .xxxrc
+ *                        or xxx.cfg format
+ *
+ * @returns a scribble buffer with the directory name in it
+ */
+static char *
+set_cfg_dir(bool * used_cfg_name)
 {
     char * fname;
+    home_ix_t hix;
 
-    home_dirs[HOME_DIR_IX]        = find_home_dir();
-    home_dirs[XDG_DATA_HOME_IX]   = getenv("XDG_DATA_HOME");
-    home_dirs[XDG_CONFIG_HOME_IX] = getenv("XDG_CONFIG_HOME");
-
-    struct stat sbf;
-    size_t fname_len = home_cfg_LEN + local_cfg_LEN + local_dir_LEN + 3;
+    home_dirs[HOME_DIR_IX] = find_home_dir();
 
 #ifndef SORT_PW_CFG
     if (HAVE_OPT(CONFIG_FILE)) {
         size_t l = strlen(OPT_ARG(CONFIG_FILE)) + 1;
-        fname = xscribble_get(l);
+        fname = xscribble_get(l + MAX_CFG_NAME_SIZE);
         strcpy(fname, home_dirs[HOME_DIR_IX]);
         return fname;
     }
 #endif // ! SORT_PW_CFG
 
-    fname = xscribble_get(fname_len + strlen(home_dirs[HOME_DIR_IX]));
+    home_dirs[XDG_DATA_HOME_IX]   = getenv("XDG_DATA_HOME");
+    home_dirs[XDG_CONFIG_HOME_IX] = getenv("XDG_CONFIG_HOME");
+#ifdef __apple__
+    find_apple_cfg_dir();
+#endif //  __apple__
 
-    /*
-     * fname is now allocated to the size we need.
-     * now fill it in
-     */
-    fname_len =  strlen(home_dirs[HOME_DIR_IX]);
-    memcpy(fname, home_dirs[HOME_DIR_IX], fname_len);
-    fname[fname_len++] = '/';
-    memcpy(fname + fname_len, local_dir, local_dir_LEN + 1);
+    for (hix = HOME_IX_CT; hix-- != 0;) {
+        char const * hd = home_dirs[hix];
+        if (hd == NULL)
+            continue;
 
-    /*
-     * If there is a ~/.local directory, use it.  The file name varies based
-     * on whether $HOME or $HOME/.local is used.
-     */
-    if ((stat(fname, &sbf) != 0) || ! S_ISDIR(sbf.st_mode)) {
-        *have_local = false;
-
-    } else {
-        *have_local = true;
-
-        if ((sbf.st_mode & secure_mask) != 0)
-            die(GNU_PW_MGR_EXIT_PERM, inv_cfg_perms, fname,
-                (unsigned int)(sbf.st_mode & 0777));
-
-        fname_len += local_dir_LEN;
-        fname[fname_len++] = '/';
+        /*
+         * The "false" parameter says we want to look in all the
+         * directories for a config file.
+         */
+        fname = check_home_dir(hd, used_cfg_name, false);
+        if (fname != NULL)
+            return fname;
     }
 
-    fname[fname_len] = NUL;
-    return fname;
+    /*
+     * We searched the standard directories for our config file,
+     * but we couldn't find it. So, we must be creating it.
+     * But if we don't have a --seed option, then we cannot,
+     * so quit now.
+     */
+#ifdef SORT_PW_CFG
+    die(GNU_PW_MGR_EXIT_NO_CONFIG, cfg_missing_fmt,
+        *used_cfg_name ? cfg_fname : rc_fname);
+#else
+    if (! HAVE_OPT(SEED))
+        die(GNU_PW_MGR_EXIT_NO_CONFIG, cfg_missing_fmt,
+            *used_cfg_name ? cfg_fname : rc_fname);
+
+    for (hix = HOME_IX_CT; hix-- != 0;) {
+        char const * hd = home_dirs[hix];
+        if (hd == NULL)
+            continue;
+
+        /*
+         * The "true" parameter says we want to stop looking as soon
+         * as we find an acceptable directory.
+         */
+        fname = check_home_dir(hd, used_cfg_name, true);
+        if (fname != NULL)
+            return fname;
+    }
+    die(GNU_PW_MGR_EXIT_NO_CONFIG, cfg_missing_fmt, fname);
+#endif // ! SORT_PW_CFG
 }
 
 /**
@@ -255,16 +444,16 @@ find_cfg_name(void)
 #endif // ! SORT_PW_CFG
 
     {
-        bool        have_local;
+        bool        used_cfg_name;
         struct stat sbf;
 
-        fname     = set_cfg_dir(&have_local);
+        fname     = set_cfg_dir(&used_cfg_name);
         fname_len = strlen(fname);
-    
+
         /*
          * Ensure it is properly secured.
          */
-        strcpy(fname + fname_len, have_local ? local_cfg : home_cfg);
+        strcpy(fname + fname_len, used_cfg_name ? cfg_fname : rc_fname);
         if (stat(fname, &sbf) != 0) {
             int fd;
             if (errno != ENOENT)
