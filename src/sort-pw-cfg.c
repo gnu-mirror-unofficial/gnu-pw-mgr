@@ -1,46 +1,21 @@
 
 #define SORT_PW_CFG 1
 
-#include "config.h"
-
-#include <sys/types.h>
-#include <sys/stat.h>
-
-#include <ctype.h>
-#include <pwd.h>
-#include <errno.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-
-#include "sort-opts.h"
-#include "gpw-str.h"
-
-typedef enum {
-    HOME_DIR_IX = 0,
-    XDG_DATA_HOME_IX = 1,
-    XDG_CONFIG_HOME_IX = 2,
-    HOME_IX_CT
-} home_ix_t;
-
-typedef struct str_list str_list_t;
-struct str_list {
-    str_list_t *    next;
-    char            buf[0];
-};
+#include "sort-fwd.h"
 
 static char const * home_dirs[HOME_IX_CT] = { NULL };
-
 static char * find_cfg_name(void);
 
 #include "sort-opts.c"
 #include "gpw-str.c"
 
 #define xscribble_get malloc
-#define GNU_PW_MGR_EXIT_NO_MEM      SORT_PW_CFG_EXIT_NO_MEM
-#define GNU_PW_MGR_EXIT_HOMELESS    SORT_PW_CFG_EXIT_HOMELESS
-#define GNU_PW_MGR_EXIT_PERM        SORT_PW_CFG_EXIT_PERM
-#define GNU_PW_MGR_EXIT_NO_CONFIG   SORT_PW_CFG_EXIT_NO_CONFIG
+#define GNU_PW_MGR_EXIT_BAD_CONFIG      SORT_PW_CFG_EXIT_BAD_CONFIG
+#define GNU_PW_MGR_EXIT_CODING_ERROR    SORT_PW_CFG_EXIT_CODING_ERROR
+#define GNU_PW_MGR_EXIT_HOMELESS    	SORT_PW_CFG_EXIT_HOMELESS
+#define GNU_PW_MGR_EXIT_NO_CONFIG       SORT_PW_CFG_EXIT_NO_CONFIG
+#define GNU_PW_MGR_EXIT_NO_MEM      	SORT_PW_CFG_EXIT_NO_MEM
+#define GNU_PW_MGR_EXIT_PERM        	SORT_PW_CFG_EXIT_PERM
 #define set_config_name(_f)
 #include "cfg-file.c"
 #undef xscribble_get

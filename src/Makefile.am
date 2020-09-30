@@ -34,7 +34,7 @@ ao_incs      	= -I$(top_srcdir)/libopts -I$(top_builddir)/libopts
 incs            = $(lib_incs) $(ao_incs)
 
 xtra_src        = cclass.c cfg-file.c domains.c fix-pw.c pw-opts.c scribble.c \
-		seed.c wrap-libnettle.c fwd.h
+		seed.c wrap-libnettle.c fwd.h sort-fwd.h
 opts_src     	= opts.c opts.h
 opt_src      	= set-opt.c set-opt.h
 sort_opts_src   = sort-opts.c sort-opts.h

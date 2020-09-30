@@ -17,6 +17,7 @@
 #ifndef GPW_FWD_GUARD
 #define GPW_FWD_GUARD 1
 
+////DEFINES:
 #ifndef PVT_static
 #define PVT_static static
 #endif
@@ -29,25 +30,34 @@
 # define ISLIKELY(_e) (_e)
 #endif
 
-#define MIN_PW_LEN         8
-#define MIN_SEED_TEXT_LEN 64
-#define MARK_TEXT_LEN     24
-#define CONFIRM_LEN       12
-#define MIN_BUF_LEN ((256 / NBBY) + (256 / (NBBY * 2))) // 48
+#define MIN_PW_LEN            	 8
+#define MIN_SEED_TEXT_LEN     	64
+#define MARK_TEXT_LEN         	24
+#define CONFIRM_LEN           	12
+#define MAX_CFG_NAME_SIZE     	32
+#define MIN_BUF_LEN           	((256 / NBBY) + (256 / (NBBY * 2))) // 48
 #define VER_TO_INT(_maj, _min, _rev) \
-\	(((_maj)<<20) + ((_min)<<10) + (_rev))
-#define CCLASS_NO_THREE (CCLASS_NO_TRIPLETS | CCLASS_NO_SEQUENCE)
-#define SECONDS_IN_DAY  (60UL * 60UL * 24UL)
+	(((_maj)<<20) + ((_min)<<10) + (_rev))
+#define CCLASS_NO_THREE 	(CCLASS_NO_TRIPLETS | CCLASS_NO_SEQUENCE)
+#define SECONDS_IN_DAY  	(60UL * 60UL * 24UL)
 
-#define MAX_REHASH_CT  100000
+#define MAX_REHASH_CT   	100000
+
+#ifndef MAXPATHLEN
+# define MAXPATHLEN 4096
+#endif
+
+#ifndef   ACCESSPERMS
+# define  ACCESSPERMS 0777
+#endif // ACCESSPERMS
 
 typedef enum {
     HOME_DIR_IX = 0,
     XDG_DATA_HOME_IX = 1,
     XDG_CONFIG_HOME_IX = 2,
-#ifdef __apple__
+#ifdef __APPLE__
     APPLE_LOCAL_IX = 3,
-#endif
+#endif // __APPLE__
     HOME_IX_CT
 } home_ix_t;
 
@@ -56,8 +66,8 @@ struct str_list {
     str_list_t *    next;
     char            buf[0];
 };
-////GLOBALS:
 
+////GLOBALS:
 static char const * home_dirs[HOME_IX_CT] = { NULL };
 static unsigned int const secure_mask     = S_IRWXG | S_IRWXO;
 static char const * config_file_name      = NULL;
@@ -75,7 +85,6 @@ static char *       dom_text      = NULL;
 static char const * dom_file_name = NULL;
 static struct stat  dom_file_stat = { .st_size = 0 };
 static off_t        dom_text_len  = 0;
-
 ////CODE-FILES:
 
 #endif /* GPW_FWD_GUARD */

@@ -24,11 +24,6 @@
 
 ////PULL-HEADERS:
 
-#ifndef MAXPATHLEN
-# define MAXPATHLEN 4096
-#endif
-#define MAX_CFG_NAME_SIZE 32
-
 #ifndef SORT_PW_CFG // code for gnu-pw-mgr only
 
 /**
@@ -63,7 +58,7 @@ access_config_file(void)
         die(GNU_PW_MGR_EXIT_NO_CONFIG, cannot_stat_cfg, config_file_name);
     if ((sbf.st_mode & secure_mask) != 0)
         die(GNU_PW_MGR_EXIT_PERM, inv_cfg_perms, config_file_name,
-            (unsigned int)(sbf.st_mode & 0777));
+            (unsigned int)(sbf.st_mode & ACCESSPERMS));
 
     config_file_size = sbf.st_size;
 
@@ -187,7 +182,7 @@ find_home_dir(void)
 /**
  * Search one directory for our config file
  *
- * @param[in]  home           the config file home directory (maybe)
+ * @param[in]  cfg_home       the config file home directory (maybe)
  * @param[out] used_cfg_name  whether cfg_name or rc_name was used
  * @param[in]  check_cfg_file whether we can stop hunting without a config file
  *
@@ -195,47 +190,44 @@ find_home_dir(void)
  *          with enough space in it to append the config file name.
  */
 static char *
-check_home_dir(char const * home, bool * used_cfg_name, bool check_cfg_file)
+check_home_dir(char const * cfg_home, bool * used_cfg_name, bool check_cfg_file)
 {
     char name_buf[MAXPATHLEN];
     struct stat sbf;
     char * suffix;
-    size_t home_len = strlen(home);
-    bool   use_cfg_name = false;
+    size_t home_len = strlen(cfg_home);
+    bool   use_cfg_name = true; // by default, we do
 
-    if ((stat(home, &sbf) != 0) || ! S_ISDIR(sbf.st_mode))
+    if ((stat(cfg_home, &sbf) != 0) || ! S_ISDIR(sbf.st_mode))
         return NULL;
 
-    memcpy(name_buf, home, home_len);
+    memcpy(name_buf, cfg_home, home_len);
     suffix = name_buf + home_len;
 
     /*
      * IF we are looking at the real home directory, check for a ".local"
      * subdirectory. If it is there, always append it and use that.
      */
-    if (home != home_dirs[HOME_DIR_IX])
-        use_cfg_name = true;
-    else
+    if (cfg_home == home_dirs[HOME_DIR_IX])
         do {
             strcpy(suffix, local_dir);
-            if (stat(name_buf, &sbf) != 0)
-                break; // No such name
-
-            if (! S_ISDIR(sbf.st_mode))
-                break; // Not a directory
+            if (  (stat(name_buf, &sbf) != 0)
+               || (! S_ISDIR(sbf.st_mode)) ) {
+                use_cfg_name = false;
+                break; // No such name or not a dir
+            }
 
             /*
              * Make sure directory permissions are correct
              */
             if ((sbf.st_mode & secure_mask) != 0)
-                die(GNU_PW_MGR_EXIT_PERM, inv_cfg_perms, home,
-                    (unsigned int)(sbf.st_mode & 0777));
+                die(GNU_PW_MGR_EXIT_PERM, inv_cfg_perms, cfg_home,
+                    (unsigned int)(sbf.st_mode & ACCESSPERMS));
 
             /*
              * Incorporate ".local" into the name
              */
             suffix += local_dir_LEN;
-            use_cfg_name = true;
         } while (false);
 
     /*
@@ -247,6 +239,9 @@ check_home_dir(char const * home, bool * used_cfg_name, bool check_cfg_file)
     strcpy(suffix, use_cfg_name ? cfg_fname : rc_fname);
     if (stat(name_buf, &sbf) != 0) {
 
+#ifdef SORT_PW_CFG
+        return NULL; // never create a config file for the sorter
+#else
         /*
          * IF we can't find the config file, tell our caller to keep
          * trying in case another directory has the config file.
@@ -254,26 +249,19 @@ check_home_dir(char const * home, bool * used_cfg_name, bool check_cfg_file)
         if (! check_cfg_file)
             return NULL;
 
-#ifndef SORT_PW_CFG
-        if (HAVE_OPT(SEED))
-            goto dir_checks_out;
         /*
-         * We're not adding a seed so we cannot be creating a new
-         * config file, but we can't find one either. Keep looking.
+         * We didn't find the file we want the first time through.
+         * Now we've found a suitable directory, so if we wind up
+         * referencing the config file, we know what file to create.
          */
 #endif // ! SORT_PW_CFG
-
-        return NULL;
-    }
-
-    /*
-     * Make sure the file is properly secured. (only read and only by user)
-     */
-    if ((sbf.st_mode & (secure_mask | S_IWUSR | S_IXUSR)) != 0)
+    } else if ((sbf.st_mode & ACCESSPERMS) != S_IRUSR) {
+        /*
+         *  The file is improperly secured. (only read and only by user)
+         */
         die(GNU_PW_MGR_EXIT_PERM, inv_cfg_perms, name_buf,
-            (unsigned int)(sbf.st_mode & 0777));
-
-dir_checks_out:
+            (unsigned int)(sbf.st_mode & ACCESSPERMS));
+    }
 
     {
         char * res;
@@ -286,7 +274,7 @@ dir_checks_out:
     }
 }
 
-#ifdef __apple__
+#ifdef __APPLE__
 /**
  * Search in Apple's favorite place to stash config files.
  */
@@ -342,7 +330,7 @@ find_apple_cfg_dir(void)
         }
     }
 }
-#endif // __apple__
+#endif // __APPLE__
 
 /**
  * figure out where the config file has to live
@@ -371,9 +359,9 @@ set_cfg_dir(bool * used_cfg_name)
 
     home_dirs[XDG_DATA_HOME_IX]   = getenv("XDG_DATA_HOME");
     home_dirs[XDG_CONFIG_HOME_IX] = getenv("XDG_CONFIG_HOME");
-#ifdef __apple__
+#ifdef __APPLE__
     find_apple_cfg_dir();
-#endif //  __apple__
+#endif //  __APPLE__
 
     for (hix = HOME_IX_CT; hix-- != 0;) {
         char const * hd = home_dirs[hix];
@@ -389,20 +377,11 @@ set_cfg_dir(bool * used_cfg_name)
             return fname;
     }
 
+#ifndef SORT_PW_CFG
     /*
-     * We searched the standard directories for our config file,
-     * but we couldn't find it. So, we must be creating it.
-     * But if we don't have a --seed option, then we cannot,
-     * so quit now.
+     * We searched the standard directories for our config file, but
+     * we couldn't find it. So, we must be creating it or getting help
      */
-#ifdef SORT_PW_CFG
-    die(GNU_PW_MGR_EXIT_NO_CONFIG, cfg_missing_fmt,
-        *used_cfg_name ? cfg_fname : rc_fname);
-#else
-    if (! HAVE_OPT(SEED))
-        die(GNU_PW_MGR_EXIT_NO_CONFIG, cfg_missing_fmt,
-            *used_cfg_name ? cfg_fname : rc_fname);
-
     for (hix = HOME_IX_CT; hix-- != 0;) {
         char const * hd = home_dirs[hix];
         if (hd == NULL)
@@ -416,8 +395,10 @@ set_cfg_dir(bool * used_cfg_name)
         if (fname != NULL)
             return fname;
     }
-    die(GNU_PW_MGR_EXIT_NO_CONFIG, cfg_missing_fmt, fname);
 #endif // ! SORT_PW_CFG
+
+    die(GNU_PW_MGR_EXIT_NO_CONFIG, cfg_missing_fmt,
+        *used_cfg_name ? cfg_fname : rc_fname);
 }
 
 /**
@@ -465,7 +446,7 @@ find_cfg_name(void)
 
         } else if ((sbf.st_mode & secure_mask) != 0)
             die(GNU_PW_MGR_EXIT_PERM, inv_cfg_perms, fname,
-                (unsigned int)(sbf.st_mode & 0777));
+                (unsigned int)(sbf.st_mode & ACCESSPERMS));
     }
 
     set_config_name(fname);
