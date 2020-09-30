@@ -202,24 +202,19 @@ remember or changes for you at some point.
 If an answer requires two words, you are often out of luck.  ``Pick one.''
 @end enumerate
 
-It's a mess.  @command{gnu-pw-mgr} supports a @samp{--confirm} option
-for answers to confirmation/security questions.  Give that option a
-word or two from the question, and it will print out a 12 character
-sequence of alphabetic characters that are unique to the web site and
-unique for the option argument.  For example, in the
-@command{gnu-pw-mgr} program's @file{base.test} test, the confirmation
-option arguments @code{dog} and @code{pet} produce the strings
-@code{xkzrraogchyh} and @code{brrxsbesatfj}, respectively.  These may
-be answers to the questions, @samp{what was your dog's name} or
-@samp{what was your favorite pet}, for example.  These answers are
-valid only for the @samp{who} password id and the test's seed string.
-With a different password id or seed, you would get a different answer.
+It's a mess.  @command{gnu-pw-mgr} supports a @samp{--confirm} option for
+answers to confirmation/security questions.  Give that option a word or
+two from the question, and it will print out a 12 character sequence of
+alphabetic characters that are unique to the web site and unique for the
+option argument.  For example, in the @command{gnu-pw-mgr} program's
+@file{base.test} test, the confirmation option arguments @code{dog} and
+@code{pet} produce the strings @code{xkzrraogchyh} and
+@code{brrxsbesatfj}, respectively.  These may be answers to the
+questions, @samp{what was your dog's name} or @samp{what was your
+favorite pet}, for example.  These answers are valid only for the
+@samp{who} password id.  With a different password id, you would get a
+different answer.
 
-NOTE: I have finally figured out that it is inconvenient to have
-the security question answers change when passwords change.
-Therefore, this option will, henceforth, print *two* answers.
-The first will change whenever the password changes. The second
-will only vary on the input password id and confirmation text.
 @node sharing passwords
 @section Sharing a password with someone
 
