@@ -1,10 +1,10 @@
 
 @node warning warning
-@chapter Getting Started and Warnings
+@chapter Concerns and Precautions
 @ignore
 
 This file is part of gnu-pw-mgr.
-Copyright (C) 2013-2018 Bruce Korb, all rights reserved.
+Copyright (C) 2013-2020 Bruce Korb, all rights reserved.
 This is free software. It is licensed for use, modification and
 redistribution under the terms of the GNU General Public License,
 version 3 or later <http://gnu.org/licenses/gpl.html>
@@ -26,89 +26,11 @@ with this program.  If not, see <http://www.gnu.org/licenses/>.
 Things to consider.
 
 @menu
-* getting started::     Getting Started Quickly
 * deficiencies::        Cleanups that need doing
 * prying eyes::         Shell history
 * best pratcices::      Best gnu-pw-mgr practices
 * password resets::     Password reset arrangements
 @end menu
-
-@node getting started
-@section Getting Started Quickly
-
-To use the program you must first initialize a configuration file with a "salt".
-At the moment, it is a command line only, meaning you need to start a
-"terminal" session. The backslash continues the command line and the
-quoted string continues it:
-
-@example
-$ gnu-pw-mgr -t new-pw -s \
-"Peter Piper picked a peck of pickled peppers.
-If Peter Piper picked a peck of pickled peppers,
-how many peppers did Peter Piper pick?"
-$ cat $HOME/.local/example.cfg
-
-<seed>
- <tag>new-pw</tag><ver type=integer>2104320</ver>
- <text>Peter Piper picked a peck of pickled peppers.
-If Peter Piper picked a peck of pickled peppers,
-how many peppers did Peter Piper pick?</text>
-</seed>
-@end example
-
-Now you can create passwords.
-
-@example
-$ gnu-pw-mgr /nytimes.com/
-
-seed-tag     password:   (pw undated)
-new-pw       aEv2Gt48FJalbNo4
-@end example
-
-By default, passwords have at least one alphabetic character and one digit.
-It may or may not have a special character and there's no prohibition on
-triple characters or three in a sequence. You can change the default:
-
-@example
-$ gnu-pw-mgr --default='=upper,lower,digit,spec,no-trip'
-$ gnu-pw-mgr /nytimes.com/                     
-
-seed-tag     password:   (pw undated)
-new-pw       aEv2Gt48FJalbNo/
-@end example
-
-and now the last character of the password is changed to a '/'.
-This will cause an entry to be stored for this password, so the config file will now
-contain:
-
-@example
-<default_cclass>=upper,lower,digit,spec,no-trip</default_cclass>
-<seed>
- <tag>new-pw</tag><ver type=integer>2104320</ver>
- <text>Peter Piper picked a peck of pickled peppers.
-If Peter Piper picked a peck of pickled peppers,
-how many peppers did Peter Piper pick?</text>
-</seed>
-<program per_pw_id>
-<pwtag id="Ps3lXdDHu2ZvJS16fSpjv4iF">cclass    = =upper + lower + digit + special
-+ no-triplets</pwtag>
-<pwtag id="Ps3lXdDHu2ZvJS16fSpjv4iF" date="18533">use-pbkdf2 = 10007</pwtag>
-@end example
-
-The "@samp{/nytimes.com/}" string hashes to the "@samp{Ps3l...F}"
-string. But, obviously, there is no way to derive the
-"@samp{/nytimes.com/}" string from that partial hash.  However, the
-next time you need the password, the "@samp{Ps3l...F}" will be re-created to
-find the password attributes, such as length, rehash count ("pbkdf2"),
-and any alternate special characters. See @pxref{gnu-pw-mgr
-password-options}.  for all the ways passwords can be adjusted
-(consistently) to pass muster with login restrictions.
-
-Also (hint): the "login-id" option is useful to remind you of either
-of two things: an alternate domain name for web sites that use
-multiple domains with a unified login.  It can be used to remind you
-of the login name you need for the particular site (e.g. which email
-address or which user name you've chosen).
 
 @node deficiencies
 @section Cleanups that need doing

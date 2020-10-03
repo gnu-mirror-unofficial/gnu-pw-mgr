@@ -1,4 +1,6 @@
-
+/**
+ * @file sort-pw-cfg.c
+ */
 #define SORT_PW_CFG 1
 
 #include "sort-fwd.h"

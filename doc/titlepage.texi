@@ -1,6 +1,25 @@
 \input texinfo
 @ignore
 \internalpagesizes{46\baselineskip}{6in}{-.25in}{-.25in}{\bindingoffset}{36pt}%
+
+This file is part of gnu-pw-mgr.
+Copyright (C) 2013-2020 Bruce Korb, all rights reserved.
+This is free software. It is licensed for use, modification and
+redistribution under the terms of the GNU General Public License,
+version 3 or later <http://gnu.org/licenses/gpl.html>
+
+gnu-pw-mgr is free software: you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the
+Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+gnu-pw-mgr is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program.  If not, see <http://www.gnu.org/licenses/>.
 @end ignore
 @c %**start of header
 @include version.texi
@@ -20,7 +39,7 @@
 This manual is for gnu-pw-mgr version @value{VERSION},
 updated @value{UPDATED-MONTH}
 
-Copyright @copyright{} 2013 by Bruce Korb.
+Copyright @copyright{} CRIGHT-YEARS by Bruce Korb.
 
 @quotation
 Permission is granted to copy, distribute and/or modify this document
@@ -63,9 +82,10 @@ that describes a browser plug-in that is substantially similar to this program.
 
 @menu
 * Introduction::                Introduction to password management
+* Quick Start::                 Getting Started Quickly
 * gnu-pw-mgr Invocation::       Invoking gnu-pw-mgr
 * sort-pw-cfg Invocation::      Invoking sort-pw-cfg
-* warning warning::             Getting Started and Warnings
+* warning warning::             Concerns and Precautions
 * GNU FDL::                     GNU Free Documentation License
 @end menu
 
@@ -75,6 +95,8 @@ that describes a browser plug-in that is substantially similar to this program.
   Symposium. USENIX. pp. 17–32
 
 @include intro.texi
+
+@include quick-start.texi
 
 @include invoke-gnu-pw-mgr.texi
 

@@ -1,4 +1,6 @@
-/*
+/**
+ * @file fix-pw.c
+ * 
  *  This file is part of gnu-pw-mgr.
  *
  *  Copyright (C) 2013-2018 Bruce Korb, all rights reserved.

@@ -1,7 +1,7 @@
 
 #  This file is part of gnu-pw-mgr.
 #
-#  Copyright (C) 2013-2018 Bruce Korb - all rights reserved
+#  Copyright (C) 2013-2020 Bruce Korb - all rights reserved
 #
 #  gnu-pw-mgr is free software: you can redistribute it and/or modify it
 #  under the terms of the GNU General Public License as published by the
@@ -21,7 +21,7 @@ MAN_PAGES       =
 TEXI_DOC        =
 MENU_FILES      =
 GEN_FILES       = $(MAN_PAGES) $(TEXI_DOC)
-texi_sources    = fdl.texi intro.texi warnings.texi
+texi_sources    = fdl.texi intro.texi warnings.texi quick-start.texi
 dist_man1_MANS  = $(MAN_PAGES)
 info_TEXINFOS   = gnu-pw-mgr.texi
 EXTRA_DIST      = $(info_TEXINFOS) $(texi_sources) $(GEN_FILES)

@@ -1,7 +1,9 @@
-/*
+/**
+ * @file cclass.c
+ * 
  *  This file is part of gnu-pw-mgr.
  *
- *  Copyright (C) 2013-2018 Bruce Korb, all rights reserved.
+ *  Copyright (C) 2013-2020 Bruce Korb, all rights reserved.
  *  This is free software. It is licensed for use, modification and
  *  redistribution under the terms of the GNU General Public License,
  *  version 3 or later <http://gnu.org/licenses/gpl.html>
