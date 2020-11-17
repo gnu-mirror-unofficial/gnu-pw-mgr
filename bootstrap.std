@@ -150,7 +150,11 @@ func_require_all_gnulib_modules ()
 
     require_all_gnulib_modules=:
 }
+
 require_all_gnulib_modules=func_require_all_gnulib_modules
+require_gnulib_merge_changelog=: # it requires gnulib's option processing
+require_gnulib_git_submodules=: # no submodules
+require_bootstrap_uptodate=: # we don't use gnulib's bootstrap
 
 # Leave here for anemic shells
 #
@@ -160,10 +164,7 @@ test "$BASH_VERSION" = "" && {
     return
 }
 
-{
-    shopts=' '$(echo $(set -o))' '
-    bashopts=' '$(echo $(shopt))' '
-} 2>/dev/null
+bashopts=' '$(exec 2>/dev/null ; echo $(shopt))' '
 
 # Specifically test for xtrace being set
 #
