@@ -1647,7 +1647,7 @@ func_lt_ver ()
 
 # Local variables:
 # mode: shell-script
-# sh-indentation: 2
+# sh-indentation: 4
 # eval: (add-hook 'before-save-hook 'time-stamp)
 # time-stamp-pattern: "10/scriptversion=%:y-%02m-%02d.%02H; # UTC"
 # time-stamp-time-zone: "UTC"
@@ -2332,7 +2332,7 @@ func_version ()
 
 # Local variables:
 # mode: shell-script
-# sh-indentation: 2
+# sh-indentation: 4
 # eval: (add-hook 'before-save-hook 'time-stamp)
 # time-stamp-pattern: "30/scriptversion=%:y-%02m-%02d.%02H; # UTC"
 # time-stamp-time-zone: "UTC"
@@ -2818,7 +2818,7 @@ test extract-trace = "$progname" && func_main "$@"
 
 # Local variables:
 # mode: shell-script
-# sh-indentation: 2
+# sh-indentation: 4
 # eval: (add-hook 'before-save-hook 'time-stamp)
 # time-stamp-pattern: "50/scriptversion=%:y-%02m-%02d.%02H; # UTC"
 # time-stamp-time-zone: "UTC"
@@ -5424,7 +5424,7 @@ exit ${exit_status-$EXIT_SUCCESS}
 
 # Local variables:
 # mode: shell-script
-# sh-indentation: 2
+# sh-indentation: 4
 # eval: (add-hook 'before-save-hook 'time-stamp)
 # time-stamp-pattern: "500/scriptversion=%:y-%02m-%02d.%02H; # UTC"
 # time-stamp-time-zone: "UTC"

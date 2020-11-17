@@ -23,6 +23,8 @@ with this program.  If not, see <http://www.gnu.org/licenses/>.
 @end ignore
 @c %**start of header
 @include version.texi
+@include cright.texi
+@set TITLE gnu-pw-mgr - derive a password from an id
 
 @setfilename gnu-pw-mgr.info
 @settitle @value{TITLE}
@@ -39,7 +41,7 @@ with this program.  If not, see <http://www.gnu.org/licenses/>.
 This manual is for gnu-pw-mgr version @value{VERSION},
 updated @value{UPDATED-MONTH}
 
-Copyright @copyright{} CRIGHT-YEARS by Bruce Korb.
+Copyright @copyright{} @value{CRIGHT-YEARS} by Bruce Korb.
 
 @quotation
 Permission is granted to copy, distribute and/or modify this document
